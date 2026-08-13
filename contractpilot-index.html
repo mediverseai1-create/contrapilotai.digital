@@ -1,0 +1,2580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contractpilot — See what your contracts are actually saying</title>
+<meta name="description" content="Upload a contract. Contractpilot flags the risks, missing terms, and unusual clauses in plain English — before you sign.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='5' y='2' width='22' height='28' rx='1' fill='%231A1D24'/><rect x='9' y='9' width='14' height='1.6' fill='%23E0BC5D'/><rect x='8' y='19' width='16' height='2.6' fill='%23B94A34'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  /* =========================================================
+     Design tokens — Vellum & Redline
+     ========================================================= */
+  :root {
+    --ink:          #1A1D24;
+    --ink-soft:     #3A3D46;
+    --ink-mute:     #6C6E76;
+    --vellum:       #EDE7DA;
+    --vellum-soft:  #F5F0E5;
+    --vellum-warm:  #E5DFD1;
+    --page:         #FBF8F1;
+    --aubergine:    #2C1D3E;
+    --aubergine-2:  #372748;
+    --redline:      #B94A34;
+    --redline-soft: #E4C6BC;
+    --highlighter:  #E0BC5D;
+    --sage:         #6B7F5F;
+    --rule:         #C4BCA8;
+    --rule-soft:    #D9D1BE;
+    --white:        #FFFFFF;
+
+    --serif: 'Newsreader', 'Cormorant Garamond', 'Iowan Old Style', 'Palatino', Georgia, serif;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+    --measure: 68ch;
+    --gutter: clamp(20px, 4vw, 40px);
+    --section-y: clamp(72px, 10vw, 128px);
+  }
+
+  /* =========================================================
+     Reset + base
+     ========================================================= */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--vellum);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  img, svg { display: block; max-width: 100%; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  input, textarea, select { font: inherit; color: inherit; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--redline); color: var(--vellum-soft); }
+
+  /* =========================================================
+     Typography
+     ========================================================= */
+  .display {
+    font-family: var(--serif);
+    font-weight: 400;
+    letter-spacing: -0.018em;
+    line-height: 1.02;
+    font-optical-sizing: auto;
+  }
+  h1, h2, h3, h4 { margin: 0; font-weight: 500; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .eyebrow.on-dark { color: var(--vellum-warm); opacity: 0.75; }
+  .eyebrow .accent { color: var(--redline); }
+  .sec-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--ink-mute);
+  }
+
+  /* =========================================================
+     Layout primitives
+     ========================================================= */
+  .wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter); }
+  .wrap-narrow { max-width: 880px; }
+  .section { padding: var(--section-y) 0; }
+  .section + .section { border-top: 1px solid var(--rule-soft); }
+
+  /* =========================================================
+     Button system
+     ========================================================= */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border-radius: 2px;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    line-height: 1;
+    transition: transform .12s ease, background .15s ease, color .15s ease, border-color .15s ease;
+    white-space: nowrap;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--ink); color: var(--vellum-soft); }
+  .btn-primary:hover { background: #000; }
+  .btn-vellum { background: var(--vellum-soft); color: var(--ink); }
+  .btn-vellum:hover { background: var(--white); }
+  .btn-ghost { color: var(--ink); border: 1px solid var(--ink); background: transparent; }
+  .btn-ghost:hover { background: var(--ink); color: var(--vellum-soft); }
+  .btn-ghost-dark { color: var(--vellum-soft); border: 1px solid var(--vellum-warm); background: transparent; }
+  .btn-ghost-dark:hover { background: var(--vellum-soft); color: var(--ink); }
+  .btn-quiet { color: var(--ink); padding: 10px 0; }
+  .btn-quiet:hover { color: var(--redline); }
+  .btn-sm { padding: 9px 14px; font-size: 13px; }
+  .btn-block { width: 100%; }
+
+  /* =========================================================
+     Navigation
+     ========================================================= */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--aubergine);
+    color: var(--vellum-soft);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px;
+    max-width: 1240px; margin: 0 auto; padding: 0 var(--gutter);
+    gap: 24px;
+  }
+  .nav.on-light { background: var(--vellum); color: var(--ink); border-bottom: 1px solid var(--rule-soft); }
+  .nav.on-light .nav-links a { color: var(--ink-soft); }
+  .nav.on-light .nav-links a:hover { color: var(--ink); }
+  .nav.on-light .btn-vellum { background: var(--ink); color: var(--vellum-soft); }
+  .nav.on-light .btn-vellum:hover { background: #000; }
+  .nav.on-light .btn-ghost-dark { color: var(--ink); border-color: var(--ink); }
+  .nav.on-light .btn-ghost-dark:hover { background: var(--ink); color: var(--vellum-soft); }
+  .nav-brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+  .nav-brand .mark { width: 22px; height: 28px; position: relative; }
+  .nav-brand .mark .page { position: absolute; inset: 0; background: currentColor; border-radius: 1px; }
+  .nav-brand .mark .title-rule { position: absolute; left: 4px; top: 7px; width: 12px; height: 1.4px; background: var(--highlighter); opacity: .85; }
+  .nav-brand .mark .redline { position: absolute; left: 3px; top: 18px; width: 16px; height: 2.4px; background: var(--redline); }
+  .nav-links { display: flex; gap: 28px; align-items: center; }
+  .nav-links a { font-size: 14px; color: var(--vellum-warm); transition: color .15s ease; }
+  .nav-links a:hover { color: var(--vellum-soft); }
+  .nav-actions { display: flex; align-items: center; gap: 12px; }
+  .nav-toggle { display: none; }
+
+  /* =========================================================
+     Hero
+     ========================================================= */
+  .hero {
+    background: var(--aubergine);
+    color: var(--vellum-soft);
+    padding: clamp(56px, 9vw, 96px) 0 clamp(72px, 12vw, 120px);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    /* subtle vellum grain */
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 12% 20%, rgba(224,188,93,0.09), transparent 45%),
+                       radial-gradient(circle at 88% 80%, rgba(185,74,52,0.10), transparent 45%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; z-index: 1; text-align: center; max-width: 980px; margin: 0 auto; padding: 0 var(--gutter); }
+  .hero-eyebrow { margin-bottom: 28px; }
+  .hero h1 {
+    font-size: clamp(44px, 7vw, 84px);
+    line-height: 0.98;
+    letter-spacing: -0.022em;
+    margin: 0 0 28px;
+    color: var(--vellum-soft);
+  }
+  .hero h1 em { font-style: italic; color: var(--redline); font-weight: 400; }
+  .hero-sub {
+    font-size: clamp(16px, 1.7vw, 19px);
+    line-height: 1.5;
+    color: var(--vellum-warm);
+    max-width: 640px;
+    margin: 0 auto 40px;
+  }
+  .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .hero-meta {
+    margin-top: 28px;
+    display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--vellum-warm); opacity: 0.6;
+  }
+  .hero-meta span::before { content: '·'; margin-right: 24px; opacity: 0.5; }
+  .hero-meta span:first-child::before { display: none; }
+
+  /* =========================================================
+     Hero signature — the redline sample
+     ========================================================= */
+  .redline-sample {
+    margin: 64px auto 0;
+    max-width: 880px;
+    background: var(--page);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    box-shadow: 0 24px 60px -20px rgba(0,0,0,0.4), 0 4px 12px -4px rgba(0,0,0,0.2);
+    text-align: left;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+  }
+  .redline-sample-body {
+    padding: 40px 36px 40px 44px;
+    border-right: 1px solid var(--rule-soft);
+  }
+  .redline-sample-head {
+    display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--rule-soft);
+  }
+  .redline-sample-head .section-tag {
+    font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .redline-sample-head .clause-name {
+    font-family: var(--serif); font-size: 17px; font-weight: 500; color: var(--ink-soft);
+    font-style: italic;
+  }
+  .redline-sample-head .doc-label {
+    margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-mute);
+  }
+  .redline-sample-para {
+    font-family: var(--serif);
+    font-size: 17px; line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .redline-sample-para .strike {
+    text-decoration: line-through;
+    text-decoration-color: var(--redline);
+    text-decoration-thickness: 2px;
+    color: var(--ink);
+  }
+  .redline-sample-para .hl {
+    background: rgba(224,188,93,0.36);
+    padding: 0 2px;
+  }
+  .redline-sample-para .anchor {
+    position: relative;
+    border-bottom: 2px solid var(--redline);
+    cursor: pointer;
+  }
+  .redline-sample-findings {
+    padding: 32px 24px;
+    background: var(--vellum-soft);
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .findings-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 12px; border-bottom: 1px solid var(--rule-soft);
+  }
+  .findings-head .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); }
+  .findings-head .count { font-family: var(--serif); font-size: 22px; }
+  .finding {
+    padding: 14px; background: var(--white); border: 1px solid var(--rule-soft);
+    position: relative;
+  }
+  .finding.high { border-left: 3px solid var(--redline); }
+  .finding.medium { border-left: 3px solid var(--highlighter); }
+  .finding.low { border-left: 3px solid var(--sage); }
+  .finding-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+  }
+  .finding-cat { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+  .finding-sev { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .finding.high .finding-sev { color: var(--redline); }
+  .finding.medium .finding-sev { color: #9C7A2A; }
+  .finding.low .finding-sev { color: var(--sage); }
+  .finding-explain { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+  .finding-ref { font-family: var(--mono); font-size: 10.5px; color: var(--ink-mute); margin-top: 8px; letter-spacing: 0.02em; }
+
+  /* =========================================================
+     Section headers (with section number)
+     ========================================================= */
+  .sec-head {
+    margin-bottom: 56px;
+    border-bottom: 1px solid var(--rule-soft);
+    padding-bottom: 24px;
+    max-width: 720px;
+  }
+  .sec-head-body h2 {
+    font-family: var(--serif);
+    font-size: clamp(32px, 4vw, 44px);
+    letter-spacing: -0.015em;
+    line-height: 1.05;
+    margin: 8px 0 16px;
+    max-width: 20ch;
+  }
+  .sec-head-body .lede {
+    font-size: 16px; line-height: 1.55; color: var(--ink-soft);
+    max-width: 56ch;
+  }
+
+  /* =========================================================
+     How-it-works
+     ========================================================= */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .step { border-top: 1px solid var(--ink); padding-top: 20px; }
+  .step .num { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: var(--ink-mute); }
+  .step h3 { font-family: var(--serif); font-size: 24px; margin: 0 0 10px; letter-spacing: -0.01em; line-height: 1.15; }
+  .step p { font-size: 15px; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+
+  /* =========================================================
+     What we catch — feature grid using real categories
+     ========================================================= */
+  .catches { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border-top: 1px solid var(--rule-soft); }
+  .catch {
+    padding: 32px 28px;
+    border-bottom: 1px solid var(--rule-soft);
+    border-right: 1px solid var(--rule-soft);
+  }
+  .catch:nth-child(2n) { border-right: 0; }
+  .catch:nth-last-child(-n+2) { border-bottom: 0; }
+  .catch-num { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--redline); letter-spacing: 0.06em; padding-top: 3px; }
+  .catch h4 { font-family: var(--serif); font-size: 20px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .catch p { font-size: 14.5px; color: var(--ink-soft); line-height: 1.55; margin: 0; }
+  .catch-example {
+    margin-top: 12px; padding: 10px 12px; background: var(--vellum-soft); border-left: 2px solid var(--rule);
+    font-family: var(--serif); font-size: 13.5px; font-style: italic; color: var(--ink-soft); line-height: 1.45;
+  }
+
+  /* =========================================================
+     Editorial two-column block
+     ========================================================= */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+  .two-col .primary h2 {
+    font-family: var(--serif); font-size: clamp(30px, 3.6vw, 42px);
+    letter-spacing: -0.015em; line-height: 1.05; margin: 12px 0 20px;
+  }
+  .two-col .primary p { font-size: 16.5px; line-height: 1.6; color: var(--ink-soft); margin: 0 0 16px; }
+  .two-col .secondary { border-top: 2px solid var(--ink); padding-top: 24px; }
+  .two-col .secondary dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 12px 24px; }
+  .two-col .secondary dt { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-mute); padding-top: 2px; }
+  .two-col .secondary dd { margin: 0; font-size: 15px; color: var(--ink); line-height: 1.5; }
+
+  /* =========================================================
+     Pricing
+     ========================================================= */
+  .plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--rule); background: var(--page); }
+  .plan { padding: 32px 24px; border-right: 1px solid var(--rule-soft); display: flex; flex-direction: column; }
+  .plan:last-child { border-right: 0; }
+  .plan.feature { background: var(--aubergine); color: var(--vellum-soft); }
+  .plan .plan-name { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 14px; }
+  .plan.feature .plan-name { color: var(--vellum-warm); }
+  .plan .plan-price { font-family: var(--serif); display: baseline; margin-bottom: 4px; }
+  .plan .plan-price .amt { font-size: 46px; line-height: 1; letter-spacing: -0.02em; }
+  .plan .plan-price .cyc { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-mute); margin-left: 6px; }
+  .plan.feature .plan-price .cyc { color: var(--vellum-warm); }
+  .plan .plan-tagline { font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--ink-soft); margin: 4px 0 24px; }
+  .plan.feature .plan-tagline { color: var(--vellum-warm); }
+  .plan .plan-cta { margin-bottom: 24px; }
+  .plan ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .plan li { font-size: 14px; color: var(--ink-soft); display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: baseline; line-height: 1.45; }
+  .plan.feature li { color: var(--vellum-warm); }
+  .plan li::before { content: '§'; font-family: var(--serif); font-size: 14px; color: var(--redline); font-weight: 500; }
+  .plan.feature li::before { color: var(--highlighter); }
+
+  /* =========================================================
+     FAQ
+     ========================================================= */
+  .faq { border-top: 1px solid var(--ink); }
+  .faq-item { border-bottom: 1px solid var(--rule-soft); }
+  .faq-q {
+    width: 100%; text-align: left; padding: 22px 0;
+    display: flex; align-items: baseline; gap: 24px;
+    font-family: var(--serif); font-size: 21px; letter-spacing: -0.005em;
+    transition: color .15s ease;
+  }
+  .faq-q .q-num { font-family: var(--mono); font-size: 12px; color: var(--ink-mute); flex: 0 0 auto; letter-spacing: 0.06em; }
+  .faq-q .q-text { flex: 1; }
+  .faq-q .q-toggle { flex: 0 0 auto; font-family: var(--mono); font-size: 14px; color: var(--ink-mute); }
+  .faq-q:hover { color: var(--redline); }
+  .faq-a { display: none; padding: 0 0 22px 0; max-width: 60ch; font-size: 15.5px; line-height: 1.6; color: var(--ink-soft); }
+  .faq-item.open .faq-a { display: block; }
+  .faq-item.open .q-toggle::before { content: '−'; }
+  .faq-item .q-toggle::before { content: '+'; }
+
+  /* =========================================================
+     CTA band
+     ========================================================= */
+  .cta-band {
+    background: var(--aubergine);
+    color: var(--vellum-soft);
+    padding: clamp(72px, 10vw, 112px) 0;
+    text-align: center;
+  }
+  .cta-band h2 {
+    font-family: var(--serif); font-size: clamp(36px, 5vw, 60px);
+    letter-spacing: -0.02em; line-height: 1.05; margin: 0 0 20px;
+    max-width: 20ch; margin-left: auto; margin-right: auto;
+  }
+  .cta-band h2 em { font-style: italic; color: var(--redline); font-weight: 400; }
+  .cta-band p { font-size: 17px; color: var(--vellum-warm); max-width: 560px; margin: 0 auto 36px; line-height: 1.5; }
+
+  /* =========================================================
+     Footer
+     ========================================================= */
+  footer { background: var(--vellum-soft); padding: 64px 0 32px; border-top: 1px solid var(--rule-soft); }
+  .footer-inner { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 60px; margin-bottom: 56px; }
+  .footer-brand-block .tagline { color: var(--ink-mute); font-size: 14px; margin-top: 14px; max-width: 30ch; line-height: 1.5; }
+  .footer-col h5 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-mute); margin: 0 0 16px; font-weight: 600; }
+  .footer-col ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col li a { font-size: 14px; color: var(--ink-soft); }
+  .footer-col li a:hover { color: var(--redline); }
+  .footer-bottom {
+    padding-top: 24px; border-top: 1px solid var(--rule-soft);
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-mute);
+  }
+
+  /* =========================================================
+     Auth screens
+     ========================================================= */
+  .auth-shell {
+    min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr;
+    background: var(--vellum);
+  }
+  .auth-left {
+    background: var(--aubergine); color: var(--vellum-soft);
+    padding: 48px; display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  .auth-left::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 100%, rgba(185,74,52,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .auth-left-inner { position: relative; z-index: 1; max-width: 480px; }
+  .auth-left h2 {
+    font-family: var(--serif); font-size: clamp(32px, 3.5vw, 44px);
+    letter-spacing: -0.018em; line-height: 1.05; margin: 40px 0 20px;
+  }
+  .auth-left h2 em { color: var(--redline); font-style: italic; font-weight: 400; }
+  .auth-left .quote { font-family: var(--serif); font-size: 18px; line-height: 1.5; color: var(--vellum-warm); font-style: italic; }
+  .auth-left .quote-attr { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--vellum-warm); opacity: .7; margin-top: 12px; }
+  .auth-right { padding: 48px; display: flex; flex-direction: column; justify-content: center; }
+  .auth-form { max-width: 400px; width: 100%; margin: 0 auto; }
+  .auth-form h1 { font-family: var(--serif); font-size: 34px; letter-spacing: -0.015em; margin: 0 0 8px; }
+  .auth-form .auth-sub { color: var(--ink-mute); margin: 0 0 32px; font-size: 15px; }
+  .auth-form .auth-alt { margin-top: 24px; font-size: 14px; color: var(--ink-mute); text-align: center; }
+  .auth-form .auth-alt a { color: var(--ink); border-bottom: 1px solid var(--ink); padding-bottom: 1px; }
+  .auth-form .auth-alt a:hover { color: var(--redline); border-color: var(--redline); }
+
+  /* Field */
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 8px; font-weight: 600; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 12px 14px; background: var(--white);
+    border: 1px solid var(--rule); border-radius: 2px;
+    font-size: 15px; color: var(--ink);
+    transition: border-color .15s ease;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none; border-color: var(--ink);
+  }
+  .field .hint { font-size: 12px; color: var(--ink-mute); margin-top: 6px; }
+  .field .error { font-size: 13px; color: var(--redline); margin-top: 6px; font-weight: 500; }
+  .form-error {
+    padding: 10px 12px; background: var(--redline-soft); color: #7A2F1F;
+    font-size: 13.5px; margin-bottom: 20px; border-left: 3px solid var(--redline);
+  }
+  .form-success {
+    padding: 10px 12px; background: #E4EDDD; color: #3D4E31;
+    font-size: 13.5px; margin-bottom: 20px; border-left: 3px solid var(--sage);
+  }
+
+  /* =========================================================
+     App shell
+     ========================================================= */
+  .app-shell { min-height: 100vh; display: grid; grid-template-columns: 240px 1fr; background: var(--vellum); }
+  .app-sidebar {
+    background: var(--aubergine); color: var(--vellum-soft);
+    padding: 24px 20px; display: flex; flex-direction: column; gap: 24px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .app-sidebar .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--serif); font-size: 20px; letter-spacing: -0.01em;
+    padding-bottom: 24px; border-bottom: 1px solid rgba(196,188,168,0.15);
+  }
+  .app-sidebar .brand .mark { width: 20px; height: 26px; position: relative; }
+  .app-sidebar .brand .mark .page { position: absolute; inset: 0; background: var(--vellum-soft); border-radius: 1px; }
+  .app-sidebar .brand .mark .title-rule { position: absolute; left: 3.5px; top: 6px; width: 11px; height: 1.2px; background: var(--highlighter); }
+  .app-sidebar .brand .mark .redline { position: absolute; left: 2.5px; top: 16px; width: 15px; height: 2.2px; background: var(--redline); }
+  .app-sidebar nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .app-sidebar nav a {
+    padding: 10px 12px; font-size: 14px; color: var(--vellum-warm);
+    display: flex; align-items: center; gap: 12px; border-radius: 2px;
+    transition: background .15s ease, color .15s ease;
+  }
+  .app-sidebar nav a:hover { background: rgba(245,240,229,0.06); color: var(--vellum-soft); }
+  .app-sidebar nav a.active { background: rgba(245,240,229,0.1); color: var(--vellum-soft); }
+  .app-sidebar nav a .n {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em;
+    color: var(--vellum-warm); opacity: .5;
+  }
+  .app-sidebar .side-footer { border-top: 1px solid rgba(196,188,168,0.15); padding-top: 16px; }
+  .app-sidebar .user {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .app-sidebar .user .avatar {
+    width: 32px; height: 32px; background: var(--redline); color: var(--vellum-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 15px; font-weight: 500;
+  }
+  .app-sidebar .user .who { font-size: 13px; }
+  .app-sidebar .user .who .name { color: var(--vellum-soft); }
+  .app-sidebar .user .who .email { color: var(--vellum-warm); opacity: .6; font-size: 11.5px; }
+  .app-sidebar .signout {
+    width: 100%; text-align: left; padding: 8px 12px; font-size: 13px;
+    color: var(--vellum-warm);
+  }
+  .app-sidebar .signout:hover { color: var(--redline); }
+
+  .app-main { padding: 40px 48px; max-width: 100%; overflow-x: hidden; }
+  .app-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--rule-soft); }
+  .app-header h1 { font-family: var(--serif); font-size: 34px; letter-spacing: -0.015em; }
+  .app-header .app-sub { font-size: 14px; color: var(--ink-mute); font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* Stats row */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--rule-soft); background: var(--page); margin-bottom: 32px; }
+  .stat { padding: 20px 24px; border-right: 1px solid var(--rule-soft); }
+  .stat:last-child { border-right: 0; }
+  .stat .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 8px; }
+  .stat .val { font-family: var(--serif); font-size: 32px; letter-spacing: -0.015em; }
+  .stat .val.risk { color: var(--redline); }
+  .stat .val.warn { color: #9C7A2A; }
+  .stat .val.safe { color: var(--sage); }
+
+  /* Contract list */
+  .contract-list { background: var(--page); border: 1px solid var(--rule-soft); }
+  .cl-row {
+    display: grid; grid-template-columns: 1fr 100px 100px 100px 120px 24px;
+    align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--rule-soft);
+    gap: 16px; cursor: pointer; transition: background .12s ease;
+  }
+  .cl-row:hover { background: var(--vellum-soft); }
+  .cl-row:last-child { border-bottom: 0; }
+  .cl-row.header { background: var(--vellum-soft); font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); cursor: default; }
+  .cl-row.header:hover { background: var(--vellum-soft); }
+  .cl-title { font-family: var(--serif); font-size: 17px; letter-spacing: -0.005em; }
+  .cl-meta { font-family: var(--mono); font-size: 11.5px; color: var(--ink-mute); letter-spacing: 0.02em; margin-top: 3px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 11px; padding: 3px 8px;
+    letter-spacing: 0.04em; font-weight: 500;
+  }
+  .pill.high { background: var(--redline-soft); color: #7A2F1F; }
+  .pill.medium { background: #F3E7C4; color: #7C5F1E; }
+  .pill.low { background: #DCE6D2; color: #4B5E3C; }
+  .pill.neutral { background: var(--vellum-warm); color: var(--ink-soft); }
+  .cl-arrow { color: var(--ink-mute); font-family: var(--mono); }
+
+  /* Empty state */
+  .empty {
+    padding: 80px 40px; text-align: center;
+    background: var(--page); border: 1px dashed var(--rule);
+  }
+  .empty h3 { font-family: var(--serif); font-size: 28px; margin: 0 0 12px; letter-spacing: -0.01em; }
+  .empty p { color: var(--ink-mute); font-size: 15px; margin: 0 auto 24px; max-width: 44ch; line-height: 1.5; }
+  .empty .empty-mark { font-family: var(--serif); font-size: 60px; color: var(--rule); margin-bottom: 20px; line-height: 1; }
+
+  /* Upload area */
+  .upload-page { max-width: 780px; margin: 0 auto; }
+  .upload-zone {
+    padding: 60px 40px; background: var(--page); border: 1px dashed var(--rule);
+    text-align: center; margin-bottom: 24px; transition: border-color .15s ease, background .15s ease;
+  }
+  .upload-zone.drag { border-color: var(--redline); background: var(--vellum-soft); }
+  .upload-zone h3 { font-family: var(--serif); font-size: 24px; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .upload-zone p { color: var(--ink-mute); font-size: 14px; margin: 0 0 20px; }
+  .upload-zone .drop-mark {
+    width: 48px; height: 60px; margin: 0 auto 20px; position: relative;
+  }
+  .upload-zone .drop-mark::before {
+    content: ''; position: absolute; inset: 0; background: var(--vellum-warm); border: 1px solid var(--rule);
+  }
+  .upload-zone .drop-mark::after {
+    content: '↓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--ink-soft); font-size: 24px; font-family: var(--mono);
+  }
+  .upload-divider {
+    display: flex; align-items: center; gap: 16px; margin: 24px 0;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-mute);
+  }
+  .upload-divider::before, .upload-divider::after { content: ''; flex: 1; height: 1px; background: var(--rule-soft); }
+  .paste-box textarea {
+    min-height: 200px; resize: vertical; font-family: var(--mono); font-size: 13px; line-height: 1.6;
+  }
+  .analyzing {
+    padding: 40px; text-align: center; background: var(--page); border: 1px solid var(--rule);
+  }
+  .analyzing .spinner {
+    width: 32px; height: 32px; margin: 0 auto 20px; border: 2px solid var(--rule); border-top-color: var(--redline);
+    border-radius: 50%; animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .analyzing h3 { font-family: var(--serif); font-size: 22px; margin: 0 0 8px; }
+  .analyzing p { color: var(--ink-mute); font-size: 14px; margin: 0; }
+  .analyzing .stage {
+    display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-mute); margin-top: 16px;
+  }
+
+  /* Review page */
+  .review-layout { display: grid; grid-template-columns: 1fr 400px; gap: 0; border: 1px solid var(--rule-soft); background: var(--page); }
+  .review-doc { padding: 40px 44px; border-right: 1px solid var(--rule-soft); max-height: calc(100vh - 200px); overflow-y: auto; }
+  .review-doc h2 { font-family: var(--serif); font-size: 28px; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .review-doc .doc-meta { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; color: var(--ink-mute); margin-bottom: 32px; text-transform: uppercase; padding-bottom: 20px; border-bottom: 1px solid var(--rule-soft); }
+  .doc-text {
+    font-family: var(--serif); font-size: 16px; line-height: 1.75; color: var(--ink-soft);
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .doc-text .highlight {
+    background: rgba(224,188,93,0.28); padding: 0 2px;
+    border-bottom: 2px solid var(--highlighter);
+    cursor: pointer; transition: background .15s ease;
+  }
+  .doc-text .highlight.high { background: rgba(185,74,52,0.15); border-bottom-color: var(--redline); }
+  .doc-text .highlight.medium { background: rgba(224,188,93,0.28); border-bottom-color: var(--highlighter); }
+  .doc-text .highlight.low { background: rgba(107,127,95,0.12); border-bottom-color: var(--sage); }
+  .doc-text .highlight.active { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .review-findings {
+    padding: 32px 24px; background: var(--vellum-soft);
+    max-height: calc(100vh - 200px); overflow-y: auto;
+  }
+  .review-findings .rf-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--rule-soft);
+  }
+  .review-findings .rf-head .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); }
+  .review-findings .rf-head .total { font-family: var(--serif); font-size: 28px; }
+  .filter-bar { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 5px 10px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    border: 1px solid var(--rule); background: transparent;
+    transition: all .15s ease;
+  }
+  .filter-btn.active { background: var(--ink); color: var(--vellum-soft); border-color: var(--ink); }
+  .review-finding {
+    background: var(--white); border: 1px solid var(--rule-soft); padding: 16px;
+    margin-bottom: 12px; cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .review-finding:hover { transform: translateX(-2px); box-shadow: -3px 0 0 var(--ink); }
+  .review-finding.active { box-shadow: -3px 0 0 var(--ink); }
+  .review-finding.high { border-left: 3px solid var(--redline); }
+  .review-finding.medium { border-left: 3px solid var(--highlighter); }
+  .review-finding.low { border-left: 3px solid var(--sage); }
+  .rf-title {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+  }
+  .rf-title .cat { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+  .rf-title .sev { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .review-finding.high .rf-title .sev { color: var(--redline); }
+  .review-finding.medium .rf-title .sev { color: #9C7A2A; }
+  .review-finding.low .rf-title .sev { color: var(--sage); }
+  .rf-quote {
+    font-family: var(--serif); font-size: 13px; font-style: italic; color: var(--ink);
+    padding: 8px 10px; background: var(--vellum-soft); border-left: 2px solid var(--rule);
+    margin: 8px 0; line-height: 1.5;
+  }
+  .rf-explain { font-size: 13px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 8px; }
+  .rf-suggest {
+    font-size: 12.5px; color: var(--ink-soft); padding-top: 8px; border-top: 1px solid var(--rule-soft);
+    display: grid; grid-template-columns: max-content 1fr; gap: 10px;
+  }
+  .rf-suggest .label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); font-weight: 600; padding-top: 1px; }
+
+  .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .breadcrumb { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-mute); }
+  .breadcrumb a { color: var(--ink-soft); }
+  .breadcrumb a:hover { color: var(--ink); }
+  .breadcrumb .sep { margin: 0 8px; opacity: .5; }
+
+  /* Settings */
+  .settings-page { max-width: 720px; margin: 0 auto; }
+  .settings-block {
+    background: var(--page); border: 1px solid var(--rule-soft);
+    padding: 32px; margin-bottom: 24px;
+  }
+  .settings-block h3 { font-family: var(--serif); font-size: 22px; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .settings-block .block-sub { color: var(--ink-mute); font-size: 14px; margin: 0 0 24px; }
+  .settings-block .status-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; border-top: 1px solid var(--rule-soft);
+    font-size: 14px;
+  }
+  .settings-block .status-row .lbl { color: var(--ink-mute); font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .status-good { color: var(--sage); font-weight: 500; }
+  .status-bad { color: var(--redline); font-weight: 500; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 100;
+    padding: 14px 20px; background: var(--ink); color: var(--vellum-soft);
+    font-size: 14px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    display: flex; align-items: center; gap: 12px;
+    animation: toastIn .25s ease;
+    max-width: 400px;
+  }
+  .toast.error { background: var(--redline); }
+  .toast.success { background: var(--sage); }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  /* Mode banner */
+  .demo-banner {
+    background: var(--highlighter); color: #4A3B14;
+    padding: 8px 20px; text-align: center;
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    border-bottom: 1px solid #C4A047;
+  }
+  .demo-banner a { text-decoration: underline; }
+
+  /* =========================================================
+     Responsive
+     ========================================================= */
+  @media (max-width: 1120px) and (min-width: 961px) {
+    .plans { grid-template-columns: repeat(2, 1fr); }
+    .plan { border-right: 1px solid var(--rule-soft); border-bottom: 1px solid var(--rule-soft); }
+    .plan:nth-child(2n) { border-right: 0; }
+    .plan:nth-last-child(-n+2) { border-bottom: 0; }
+  }
+  @media (max-width: 960px) {
+    .nav-links { display: none; }
+    .nav-toggle { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: transparent; color: inherit; }
+    .nav.open .nav-links {
+      display: flex; flex-direction: column; position: absolute; top: 68px; left: 0; right: 0;
+      background: var(--aubergine); padding: 24px var(--gutter); gap: 20px; border-top: 1px solid rgba(196,188,168,0.15);
+    }
+    .nav.on-light.open .nav-links { background: var(--vellum); border-top-color: var(--rule-soft); }
+    .redline-sample { grid-template-columns: 1fr; }
+    .redline-sample-body { border-right: 0; border-bottom: 1px solid var(--rule-soft); }
+    .sec-head { grid-template-columns: 1fr; gap: 12px; }
+    .catches { grid-template-columns: 1fr; }
+    .catch { border-right: 0; }
+    .catch:nth-last-child(-n+2) { border-bottom: 1px solid var(--rule-soft); }
+    .catch:last-child { border-bottom: 0; }
+    .two-col { grid-template-columns: 1fr; gap: 48px; }
+    .plans { grid-template-columns: 1fr; }
+    .plan { border-right: 0; border-bottom: 1px solid var(--rule-soft); }
+    .plan:last-child { border-bottom: 0; }
+    .steps { grid-template-columns: 1fr; }
+    .footer-inner { grid-template-columns: 1fr 1fr; gap: 40px; }
+    .auth-shell { grid-template-columns: 1fr; }
+    .auth-left { display: none; }
+    .app-shell { grid-template-columns: 1fr; }
+    .app-sidebar {
+      position: static; height: auto; flex-direction: row; align-items: center;
+      padding: 12px 20px; gap: 16px; overflow-x: auto;
+    }
+    .app-sidebar .brand { border-bottom: 0; padding-bottom: 0; flex-shrink: 0; }
+    .app-sidebar nav { flex-direction: row; flex: 1; gap: 4px; }
+    .app-sidebar nav a { padding: 8px 12px; white-space: nowrap; }
+    .app-sidebar nav a .n { display: none; }
+    .app-sidebar .side-footer { border-top: 0; padding-top: 0; }
+    .app-sidebar .user { display: none; }
+    .app-sidebar .signout { padding: 6px 10px; }
+    .app-main { padding: 24px 20px; }
+    .app-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2) { border-right: 0; }
+    .stat:nth-child(-n+2) { border-bottom: 1px solid var(--rule-soft); }
+    .cl-row { grid-template-columns: 1fr auto; gap: 12px; }
+    .cl-row .cl-col { display: none; }
+    .cl-row.header { display: none; }
+    .review-layout { grid-template-columns: 1fr; }
+    .review-doc { border-right: 0; border-bottom: 1px solid var(--rule-soft); max-height: none; padding: 24px; }
+    .review-findings { max-height: none; padding: 20px; }
+  }
+  @media (max-width: 560px) {
+    .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+    .redline-sample-body { padding: 24px 20px; }
+    .redline-sample-findings { padding: 20px 16px; }
+    .auth-right { padding: 32px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app-root"></div>
+
+<script type="module">
+/* ===========================================================
+   State
+   =========================================================== */
+const state = {
+  user: null,          // { uid, email, displayName }
+  mode: 'demo',        // 'live' or 'demo'
+  route: null,
+  contracts: [],       // in-memory cache; also persisted (localStorage in demo, Firestore in live)
+  currentContract: null,
+  fbApp: null,
+  fbAuth: null,
+  fbDb: null,
+  geminiKey: localStorage.getItem('cp_gemini_key') || '',
+  fbConfig: null,      // set on live init
+  pdfjs: null,
+  toast: null,
+};
+
+/* ===========================================================
+   Firebase config — user fills this in via Settings or hard-codes
+   Leaving empty defaults to demo mode
+   =========================================================== */
+const FIREBASE_CONFIG = (() => {
+  try {
+    const stored = localStorage.getItem('cp_fb_config');
+    if (stored) return JSON.parse(stored);
+  } catch (e) {}
+  return null;
+})();
+
+/* ===========================================================
+   Router (hash-based)
+   =========================================================== */
+const routes = [
+  { pattern: /^\/?$/, view: 'landing', auth: false },
+  { pattern: /^\/signin$/, view: 'signin', auth: false },
+  { pattern: /^\/signup$/, view: 'signup', auth: false },
+  { pattern: /^\/reset$/, view: 'reset', auth: false },
+  { pattern: /^\/pricing$/, view: 'landing', auth: false, hash: 'pricing' },
+  { pattern: /^\/features$/, view: 'landing', auth: false, hash: 'catches' },
+  { pattern: /^\/how$/, view: 'landing', auth: false, hash: 'how' },
+  { pattern: /^\/faq$/, view: 'landing', auth: false, hash: 'faq' },
+  { pattern: /^\/legal\/(.+)$/, view: 'legal', auth: false },
+  { pattern: /^\/app\/?$/, view: 'dashboard', auth: true },
+  { pattern: /^\/app\/new$/, view: 'newReview', auth: true },
+  { pattern: /^\/app\/review\/(.+)$/, view: 'reviewPage', auth: true, param: 'id' },
+  { pattern: /^\/app\/settings$/, view: 'settings', auth: true },
+];
+
+function currentRoute() {
+  const raw = location.hash.replace(/^#/, '') || '/';
+  for (const r of routes) {
+    const m = raw.match(r.pattern);
+    if (m) return { ...r, match: m, raw };
+  }
+  return { view: 'landing', auth: false, raw };
+}
+
+function navigate(path) { location.hash = path; }
+
+function render() {
+  const r = currentRoute();
+  state.route = r;
+  if (r.auth && !state.user) { navigate('/signin'); return; }
+  const root = document.getElementById('app-root');
+
+  const views = {
+    landing: viewLanding,
+    signin: viewSignin,
+    signup: viewSignup,
+    reset: viewReset,
+    dashboard: viewDashboard,
+    newReview: viewNewReview,
+    reviewPage: viewReviewPage,
+    settings: viewSettings,
+    legal: viewLegal,
+  };
+  const fn = views[r.view] || viewLanding;
+  root.innerHTML = fn(r);
+
+  // After DOM insert, bind
+  bindGlobal();
+  if (r.view === 'landing') bindLanding();
+  if (['signin','signup','reset'].includes(r.view)) bindAuth(r.view);
+  if (r.view === 'dashboard') bindDashboard();
+  if (r.view === 'newReview') bindNewReview();
+  if (r.view === 'reviewPage') bindReviewPage(r);
+  if (r.view === 'settings') bindSettings();
+
+  // Anchor scroll for landing sub-routes
+  if (r.hash) {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(r.hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  } else {
+    window.scrollTo(0, 0);
+  }
+}
+
+window.addEventListener('hashchange', render);
+
+/* ===========================================================
+   Firebase (dynamic import w/ fallback)
+   =========================================================== */
+async function initFirebase() {
+  if (!FIREBASE_CONFIG) { state.mode = 'demo'; return; }
+  try {
+    const [{ initializeApp }, auth, fs] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
+    ]);
+    state.fbApp = initializeApp(FIREBASE_CONFIG);
+    state.fbAuth = auth.getAuth(state.fbApp);
+    state.fbDb = fs.getFirestore(state.fbApp);
+    state.mode = 'live';
+    state.firebase = { auth, fs };
+    auth.onAuthStateChanged(state.fbAuth, async (u) => {
+      if (u) {
+        state.user = { uid: u.uid, email: u.email, displayName: u.displayName || u.email.split('@')[0] };
+        await loadContracts();
+      } else {
+        state.user = null;
+        state.contracts = [];
+      }
+      render();
+    });
+  } catch (e) {
+    console.warn('Firebase failed to load — running in demo mode', e);
+    state.mode = 'demo';
+    initDemoAuth();
+  }
+}
+
+function initDemoAuth() {
+  const stored = localStorage.getItem('cp_demo_user');
+  if (stored) {
+    state.user = JSON.parse(stored);
+    loadContracts();
+  }
+}
+
+/* ===========================================================
+   Auth actions
+   =========================================================== */
+async function signIn(email, password) {
+  if (state.mode === 'live') {
+    const { signInWithEmailAndPassword } = state.firebase.auth;
+    const cred = await signInWithEmailAndPassword(state.fbAuth, email, password);
+    return cred.user;
+  } else {
+    const stored = JSON.parse(localStorage.getItem('cp_demo_accounts') || '{}');
+    const acct = stored[email.toLowerCase()];
+    if (!acct) throw new Error('No account found with that email.');
+    if (acct.password !== password) throw new Error('That password is incorrect.');
+    state.user = { uid: acct.uid, email: acct.email, displayName: acct.displayName };
+    localStorage.setItem('cp_demo_user', JSON.stringify(state.user));
+    await loadContracts();
+    return state.user;
+  }
+}
+
+async function signUp(name, email, password) {
+  if (state.mode === 'live') {
+    const { createUserWithEmailAndPassword, updateProfile } = state.firebase.auth;
+    const cred = await createUserWithEmailAndPassword(state.fbAuth, email, password);
+    if (name) await updateProfile(cred.user, { displayName: name });
+    return cred.user;
+  } else {
+    const stored = JSON.parse(localStorage.getItem('cp_demo_accounts') || '{}');
+    if (stored[email.toLowerCase()]) throw new Error('An account with that email already exists.');
+    const uid = 'demo_' + Math.random().toString(36).slice(2, 10);
+    stored[email.toLowerCase()] = { uid, email, password, displayName: name || email.split('@')[0] };
+    localStorage.setItem('cp_demo_accounts', JSON.stringify(stored));
+    state.user = { uid, email, displayName: name || email.split('@')[0] };
+    localStorage.setItem('cp_demo_user', JSON.stringify(state.user));
+    await loadContracts();
+    return state.user;
+  }
+}
+
+async function signOut() {
+  if (state.mode === 'live') {
+    await state.firebase.auth.signOut(state.fbAuth);
+  } else {
+    localStorage.removeItem('cp_demo_user');
+    state.user = null;
+    state.contracts = [];
+  }
+  navigate('/');
+  render();
+}
+
+async function resetPassword(email) {
+  if (state.mode === 'live') {
+    const { sendPasswordResetEmail } = state.firebase.auth;
+    await sendPasswordResetEmail(state.fbAuth, email);
+  } else {
+    // demo mode — pretend we sent
+    await new Promise(r => setTimeout(r, 600));
+  }
+}
+
+/* ===========================================================
+   Contracts store
+   =========================================================== */
+async function loadContracts() {
+  if (!state.user) { state.contracts = []; return; }
+  if (state.mode === 'live') {
+    try {
+      const { collection, query, where, orderBy, getDocs } = state.firebase.fs;
+      const q = query(collection(state.fbDb, 'contracts'), where('ownerUid', '==', state.user.uid), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      state.contracts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.error('Failed to load contracts', e);
+      state.contracts = [];
+    }
+  } else {
+    const key = 'cp_demo_contracts_' + state.user.uid;
+    state.contracts = JSON.parse(localStorage.getItem(key) || '[]');
+  }
+}
+
+async function saveContract(contract) {
+  if (state.mode === 'live') {
+    const { collection, addDoc, serverTimestamp } = state.firebase.fs;
+    const docRef = await addDoc(collection(state.fbDb, 'contracts'), {
+      ...contract,
+      ownerUid: state.user.uid,
+      createdAt: serverTimestamp(),
+    });
+    return { id: docRef.id, ...contract, createdAt: new Date().toISOString() };
+  } else {
+    const key = 'cp_demo_contracts_' + state.user.uid;
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    const record = {
+      id: 'c_' + Math.random().toString(36).slice(2, 10),
+      ownerUid: state.user.uid,
+      ...contract,
+      createdAt: new Date().toISOString(),
+    };
+    list.unshift(record);
+    localStorage.setItem(key, JSON.stringify(list));
+    state.contracts = list;
+    return record;
+  }
+}
+
+async function fetchContract(id) {
+  if (state.mode === 'live') {
+    const { doc, getDoc } = state.firebase.fs;
+    const snap = await getDoc(doc(state.fbDb, 'contracts', id));
+    if (!snap.exists()) return null;
+    const data = { id: snap.id, ...snap.data() };
+    if (data.ownerUid !== state.user.uid) return null;
+    return data;
+  } else {
+    const key = 'cp_demo_contracts_' + state.user.uid;
+    const list = JSON.parse(localStorage.getItem(key) || '[]');
+    return list.find(c => c.id === id) || null;
+  }
+}
+
+async function deleteContract(id) {
+  if (state.mode === 'live') {
+    const { doc, deleteDoc } = state.firebase.fs;
+    await deleteDoc(doc(state.fbDb, 'contracts', id));
+  } else {
+    const key = 'cp_demo_contracts_' + state.user.uid;
+    let list = JSON.parse(localStorage.getItem(key) || '[]');
+    list = list.filter(c => c.id !== id);
+    localStorage.setItem(key, JSON.stringify(list));
+    state.contracts = list;
+  }
+}
+
+/* ===========================================================
+   PDF text extraction (lazy pdf.js)
+   =========================================================== */
+async function loadPdfJs() {
+  if (state.pdfjs) return state.pdfjs;
+  try {
+    const mod = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs');
+    mod.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+    state.pdfjs = mod;
+    return mod;
+  } catch (e) {
+    throw new Error('Could not load PDF parser. Please paste the contract text instead.');
+  }
+}
+
+async function extractPdfText(file) {
+  const pdfjs = await loadPdfJs();
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map(it => it.str);
+    text += strings.join(' ') + '\n\n';
+  }
+  return text.trim();
+}
+
+/* ===========================================================
+   Gemini API
+   =========================================================== */
+async function callGemini(prompt) {
+  if (!state.geminiKey) throw new Error('No Gemini API key configured. Add one in Settings.');
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${encodeURIComponent(state.geminiKey)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 4096, responseMimeType: 'application/json' },
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Gemini API error: ' + err.slice(0, 200));
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return text;
+}
+
+const RISK_CATEGORIES = [
+  { key: 'auto-renewal', label: 'Auto-renewal' },
+  { key: 'termination', label: 'Termination' },
+  { key: 'liability', label: 'Liability' },
+  { key: 'indemnity', label: 'Indemnity' },
+  { key: 'ip', label: 'IP & Ownership' },
+  { key: 'confidentiality', label: 'Confidentiality' },
+  { key: 'payment', label: 'Payment terms' },
+  { key: 'sla', label: 'SLA' },
+  { key: 'jurisdiction', label: 'Jurisdiction' },
+  { key: 'assignment', label: 'Assignment' },
+  { key: 'missing', label: 'Missing clause' },
+  { key: 'unusual', label: 'Unusual language' },
+  { key: 'obligation', label: 'Obligation' },
+];
+
+async function analyzeContract(text) {
+  if (state.geminiKey) {
+    try {
+      const prompt = buildAnalysisPrompt(text);
+      const jsonStr = await callGemini(prompt);
+      const parsed = JSON.parse(jsonStr);
+      // Validate + normalize
+      const findings = (parsed.findings || []).map((f, i) => normalizeFinding(f, i, text));
+      return {
+        title: parsed.title || 'Untitled contract',
+        summary: parsed.summary || '',
+        counterparty: parsed.counterparty || '',
+        docType: parsed.docType || 'Agreement',
+        findings,
+      };
+    } catch (e) {
+      console.warn('Gemini analysis failed, falling back to heuristic', e);
+      showToast('Analysis failed — showing example findings. Check your API key in Settings.', 'error');
+      return heuristicAnalyze(text);
+    }
+  }
+  return heuristicAnalyze(text);
+}
+
+function buildAnalysisPrompt(text) {
+  const cats = RISK_CATEGORIES.map(c => c.key).join(', ');
+  return `You are a senior contracts attorney reviewing an agreement for a business team. Read the contract text below and return a JSON object identifying every clause that is a risk, missing, unusual, or worth flagging.
+
+Return VALID JSON only. Do not include any prose outside the JSON. Schema:
+{
+  "title": "short document title, e.g. 'Master Services Agreement'",
+  "docType": "one of: NDA, MSA, SOW, SaaS Agreement, Employment, Lease, Vendor Agreement, License, Terms of Service, Other",
+  "counterparty": "the other party's name if identifiable, else empty string",
+  "summary": "2–3 sentence plain-English summary of what this contract is and its main commitments",
+  "findings": [
+    {
+      "category": "one of: ${cats}",
+      "severity": "high | medium | low",
+      "title": "5–8 word finding title, e.g. 'Auto-renews for 12 months'",
+      "quote": "the EXACT text from the contract that this finding refers to (10–150 words, verbatim). Must appear in the contract text.",
+      "sectionRef": "section number or heading if present, e.g. 'Section 8.2' or 'Clause 14', else empty string",
+      "explanation": "2–3 sentence plain-English explanation of what this means for the business",
+      "suggestion": "1–2 sentence concrete suggestion for what to negotiate or ask about"
+    }
+  ]
+}
+
+Severity guidance:
+- high: creates real business risk (unlimited liability, one-sided indemnity, auto-renewal >6 months with tight notice, aggressive IP assignment, exclusivity, broad non-competes)
+- medium: worth pushing back on (short cure periods, uncapped fees, vague SLAs, unusual jurisdiction, broad confidentiality)
+- low: worth being aware of but common/acceptable (standard force majeure, boilerplate that could be tightened)
+
+Also flag as "missing" category anything that's conspicuously absent for this document type (e.g. an MSA with no limitation of liability clause).
+
+Aim for 4–12 findings depending on contract length. Focus on the most consequential items.
+
+Contract text:
+"""
+${text.slice(0, 30000)}
+"""`;
+}
+
+function normalizeFinding(f, i, text) {
+  const sev = ['high','medium','low'].includes(f.severity) ? f.severity : 'medium';
+  const cat = RISK_CATEGORIES.find(c => c.key === f.category)?.label || (f.category || 'Unusual language');
+  return {
+    id: 'f_' + i + '_' + Math.random().toString(36).slice(2, 7),
+    category: cat,
+    categoryKey: f.category || 'unusual',
+    severity: sev,
+    title: (f.title || '').trim() || 'Flagged clause',
+    quote: (f.quote || '').trim(),
+    sectionRef: (f.sectionRef || '').trim(),
+    explanation: (f.explanation || '').trim(),
+    suggestion: (f.suggestion || '').trim(),
+  };
+}
+
+/* Heuristic fallback so demo mode always shows a plausible result */
+function heuristicAnalyze(text) {
+  const t = text || '';
+  const findings = [];
+  let idx = 0;
+
+  const push = (categoryKey, category, severity, title, quote, sectionRef, explanation, suggestion) => {
+    findings.push({
+      id: 'f_' + (idx++) + '_' + Math.random().toString(36).slice(2, 7),
+      category, categoryKey, severity, title,
+      quote, sectionRef, explanation, suggestion,
+    });
+  };
+
+  // Auto-renewal detection
+  const arMatch = t.match(/(?:auto(?:matically)?\s+renew|automatic\s+renewal|shall\s+renew)[^.]{0,300}\./i);
+  if (arMatch) {
+    push('auto-renewal', 'Auto-renewal', 'high',
+      'Auto-renewal with short notice window',
+      arMatch[0].trim(),
+      findSectionRef(t, arMatch.index),
+      "This contract renews automatically unless you cancel within a set notice window. Miss it and you're locked in for another term.",
+      "Negotiate the notice window down to 30 days, or require the other party to send a renewal reminder before it triggers.");
+  }
+
+  // Liability cap
+  const liabMatch = t.match(/(?:limitation\s+of\s+liability|total\s+liability|aggregate\s+liability|liability[^.]{0,60}shall\s+(?:not|be))[^.]{0,300}\./i);
+  if (liabMatch) {
+    push('liability', 'Liability', 'medium',
+      'Liability capped at fees paid',
+      liabMatch[0].trim(),
+      findSectionRef(t, liabMatch.index),
+      "Your maximum recovery is limited — often to fees paid in the last 12 months. If the counterparty causes a much larger loss, you can't recover the difference.",
+      "Push to exclude gross negligence, wilful misconduct, breach of confidentiality, and IP indemnity from the cap.");
+  } else if (t.length > 1500) {
+    push('missing', 'Missing clause', 'high',
+      'No limitation of liability',
+      '',
+      '',
+      "There's no cap or floor on either party's liability. In most B2B agreements this is standard — its absence exposes you to unlimited damages.",
+      "Ask for a mutual cap at fees paid in the trailing 12 months, with standard carve-outs.");
+  }
+
+  // Indemnification
+  const idemMatch = t.match(/(?:shall\s+indemnify|agrees\s+to\s+indemnify|hold\s+harmless)[^.]{0,300}\./i);
+  if (idemMatch) {
+    push('indemnity', 'Indemnity', 'medium',
+      'One-way indemnity obligation',
+      idemMatch[0].trim(),
+      findSectionRef(t, idemMatch.index),
+      "You're agreeing to defend and pay damages for claims arising from your acts or products. Check whether the obligation is mutual and what it covers.",
+      "Make the indemnity mutual and limit it to third-party claims — not internal disputes between the two parties.");
+  }
+
+  // Termination for convenience
+  const termMatch = t.match(/(?:terminat(?:e|ion)\s+for\s+convenience|terminat(?:e|ion)\s+without\s+cause)[^.]{0,300}\./i);
+  if (termMatch) {
+    push('termination', 'Termination', 'medium',
+      'Termination for convenience by counterparty',
+      termMatch[0].trim(),
+      findSectionRef(t, termMatch.index),
+      "The other side can end this agreement at any time for any reason, with the specified notice. If you've built work around this, you're exposed to a sudden loss.",
+      "Require mutual termination-for-convenience rights, and add a wind-down or refund provision for prepaid fees.");
+  }
+
+  // IP assignment
+  const ipMatch = t.match(/(?:intellectual\s+property|work\s+product|deliverables)[^.]{0,80}(?:assign|assigned|transfer|belong)[^.]{0,200}\./i);
+  if (ipMatch) {
+    push('ip', 'IP & Ownership', 'high',
+      'Broad IP assignment',
+      ipMatch[0].trim(),
+      findSectionRef(t, ipMatch.index),
+      "Ownership of deliverables and related IP transfers to one party. Check whether this includes your background IP or general tools you use across clients.",
+      "Carve out background IP and general know-how; scope the assignment to specific deliverables only, not tooling.");
+  }
+
+  // Confidentiality
+  const confMatch = t.match(/(?:confidential\s+information|non-disclosure)[^.]{0,200}\./i);
+  if (confMatch) {
+    push('confidentiality', 'Confidentiality', 'low',
+      'Standard confidentiality with no term',
+      confMatch[0].trim(),
+      findSectionRef(t, confMatch.index),
+      "The confidentiality obligations here may extend indefinitely. That's common for trade secrets but unusually broad for ordinary business information.",
+      "Add a 3–5 year survival window for non-trade-secret information; keep the perpetual obligation for trade secrets only.");
+  }
+
+  // Payment terms
+  const payMatch = t.match(/(?:payment\s+shall\s+be|invoices?\s+shall\s+be\s+paid|net\s+\d+|due\s+within\s+\d+)[^.]{0,200}\./i);
+  if (payMatch) {
+    push('payment', 'Payment terms', 'low',
+      'Net-30 with late fees',
+      payMatch[0].trim(),
+      findSectionRef(t, payMatch.index),
+      "Standard payment window with an interest charge on late invoices. Check whether the late fee compounds and whether it exceeds usury limits in your jurisdiction.",
+      "If you're the payer, ask for a 5-business-day cure period before late fees apply.");
+  }
+
+  // Jurisdiction
+  const jurMatch = t.match(/(?:governed\s+by\s+the\s+laws\s+of|jurisdiction\s+of)[^.]{0,200}\./i);
+  if (jurMatch) {
+    push('jurisdiction', 'Jurisdiction', 'low',
+      'Governing law favours counterparty',
+      jurMatch[0].trim(),
+      findSectionRef(t, jurMatch.index),
+      "Disputes will be resolved under a jurisdiction that may not be convenient or familiar to you. Enforcement and legal fees are typically higher outside your home jurisdiction.",
+      "Propose mutual jurisdiction (each party in the other's home court), or arbitration in a neutral seat like London or Singapore.");
+  }
+
+  // If we found nothing at all, seed some example findings so demo mode always produces output
+  if (findings.length === 0) {
+    push('auto-renewal', 'Auto-renewal', 'high',
+      'Locked-in renewal cycle',
+      text.slice(0, 200) || 'No matching clause language found in the sample.',
+      '',
+      "The contract appears to renew automatically. Confirm the notice window and whether it can be shortened.",
+      "Ask for a 30-day notice window and a written reminder before the renewal date.");
+    push('missing', 'Missing clause', 'medium',
+      'No termination assistance clause',
+      '',
+      '',
+      "There's no obligation for the other party to help you transition off if the contract ends. This is common in vendor and SaaS agreements.",
+      "Add a 30–90 day transition assistance period at agreed rates, with data return and deletion obligations.");
+  }
+
+  const title = extractTitle(t);
+  const docType = guessDocType(t);
+  const counterparty = extractCounterparty(t);
+  const summary = buildSummary(t, docType, counterparty, findings.length);
+
+  return { title, docType, counterparty, summary, findings };
+}
+
+function findSectionRef(text, idx) {
+  const window = text.slice(Math.max(0, idx - 300), idx);
+  const m = window.match(/(?:Section|Clause|Article|§)\s*\d+(\.\d+)*/gi);
+  return m ? m[m.length - 1] : '';
+}
+function extractTitle(t) {
+  const first = t.slice(0, 500).split('\n').map(l => l.trim()).filter(Boolean);
+  const upper = first.find(l => l.length > 6 && l.length < 80 && l.replace(/[^A-Za-z]/g, '').length > 5 && l === l.toUpperCase());
+  if (upper) return toTitleCase(upper);
+  return first[0] ? (first[0].length > 60 ? first[0].slice(0, 60) + '…' : first[0]) : 'Untitled contract';
+}
+function toTitleCase(s) { return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
+function guessDocType(t) {
+  const l = t.toLowerCase();
+  if (/master\s+services?\s+agreement|\bmsa\b/.test(l)) return 'MSA';
+  if (/non[-\s]?disclosure|confidentiality\s+agreement|\bnda\b/.test(l)) return 'NDA';
+  if (/statement\s+of\s+work|\bsow\b/.test(l)) return 'SOW';
+  if (/software[-\s]as[-\s]a[-\s]service|saas\s+agreement|subscription\s+agreement/.test(l)) return 'SaaS Agreement';
+  if (/employment|employee\s+agreement/.test(l)) return 'Employment';
+  if (/lease|tenanc/.test(l)) return 'Lease';
+  if (/vendor|supplier/.test(l)) return 'Vendor Agreement';
+  if (/license|licence/.test(l)) return 'License';
+  if (/terms\s+of\s+service|terms\s+and\s+conditions/.test(l)) return 'Terms of Service';
+  return 'Agreement';
+}
+function extractCounterparty(t) {
+  const m = t.match(/between\s+([A-Z][A-Za-z0-9&., ]{2,60}(?:Inc\.?|Ltd\.?|LLC|Limited|Corp\.?|GmbH|PLC))/);
+  if (m) return m[1].trim();
+  return '';
+}
+function buildSummary(t, docType, counterparty, findingCount) {
+  const cp = counterparty ? ` with ${counterparty}` : '';
+  return `This ${docType}${cp} runs approximately ${Math.round(t.length / 5)} words. Contractpilot flagged ${findingCount} item${findingCount === 1 ? '' : 's'} across obligations, risks, and missing terms worth reviewing before signature.`;
+}
+
+/* ===========================================================
+   Highlighting — find each finding's quote in the text
+   =========================================================== */
+function buildHighlightedText(text, findings) {
+  if (!findings || findings.length === 0) return escapeHtml(text);
+  const spans = [];
+  for (const f of findings) {
+    if (!f.quote) continue;
+    const idx = text.indexOf(f.quote.slice(0, 80));
+    if (idx >= 0) {
+      const end = Math.min(text.length, idx + f.quote.length);
+      spans.push({ start: idx, end, id: f.id, sev: f.severity });
+    }
+  }
+  spans.sort((a, b) => a.start - b.start);
+  // Resolve overlaps: keep first, drop overlapping
+  const clean = [];
+  for (const s of spans) {
+    if (clean.length === 0 || s.start >= clean[clean.length - 1].end) clean.push(s);
+  }
+  let out = '';
+  let cursor = 0;
+  for (const s of clean) {
+    out += escapeHtml(text.slice(cursor, s.start));
+    out += `<span class="highlight ${s.sev}" data-finding-id="${s.id}">${escapeHtml(text.slice(s.start, s.end))}</span>`;
+    cursor = s.end;
+  }
+  out += escapeHtml(text.slice(cursor));
+  return out;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/* ===========================================================
+   Toast
+   =========================================================== */
+function showToast(msg, kind = '') {
+  if (state.toast) { state.toast.remove(); }
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  state.toast = el;
+  setTimeout(() => { el.remove(); if (state.toast === el) state.toast = null; }, 4200);
+}
+
+/* ===========================================================
+   Shared HTML fragments
+   =========================================================== */
+function brandMark(dark = true) {
+  return `<span class="mark" style="color:${dark ? 'var(--vellum-soft)' : 'var(--ink)'}">
+    <span class="page"></span>
+    <span class="title-rule"></span>
+    <span class="redline"></span>
+  </span>`;
+}
+
+function navHtml(mode = 'dark') {
+  const cls = mode === 'light' ? 'nav on-light' : 'nav';
+  const primaryBtn = state.user
+    ? `<a href="#/app" class="btn btn-sm btn-vellum">Open dashboard</a>`
+    : `<a href="#/signup" class="btn btn-sm btn-vellum">Start reviewing</a>`;
+  const secondaryBtn = state.user
+    ? ''
+    : `<a href="#/signin" class="btn btn-sm btn-quiet" style="color:${mode==='light' ? 'var(--ink)' : 'var(--vellum-soft)'};padding: 8px 0;">Sign in</a>`;
+  return `
+  <div class="${cls}">
+    <div class="nav-inner">
+      <a href="#/" class="nav-brand" aria-label="Contractpilot">
+        ${brandMark(mode !== 'light')}
+        <span>Contractpilot</span>
+      </a>
+      <div class="nav-links">
+        <a href="#/how">How it works</a>
+        <a href="#/features">What it catches</a>
+        <a href="#/pricing">Pricing</a>
+        <a href="#/faq">Questions</a>
+      </div>
+      <div class="nav-actions">
+        ${secondaryBtn}
+        ${primaryBtn}
+        <button class="nav-toggle" aria-label="Menu" data-navtoggle>≡</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function footerHtml() {
+  return `
+  <footer>
+    <div class="wrap">
+      <div class="footer-inner">
+        <div class="footer-brand-block">
+          <a href="#/" class="nav-brand" style="color: var(--ink);">
+            ${brandMark(false)}
+            <span>Contractpilot</span>
+          </a>
+          <p class="tagline">AI contract review for teams that would rather read every line than skim the last page.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Product</h5>
+          <ul>
+            <li><a href="#/how">How it works</a></li>
+            <li><a href="#/features">What it catches</a></li>
+            <li><a href="#/pricing">Pricing</a></li>
+            <li><a href="#/faq">Questions</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <ul>
+            <li><a href="#/legal/about">About</a></li>
+            <li><a href="mailto:contact@contractpilotai.digital">contact@contractpilotai.digital</a></li>
+            <li><a href="#/legal/security">Security</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Legal</h5>
+          <ul>
+            <li><a href="#/legal/terms">Terms of use</a></li>
+            <li><a href="#/legal/privacy">Privacy</a></li>
+            <li><a href="#/legal/dpa">Data processing</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© Contractpilot · ${new Date().getFullYear()}</span>
+        <span>contractpilotai.digital</span>
+      </div>
+    </div>
+  </footer>`;
+}
+
+function demoBanner() {
+  if (state.mode === 'live' || !state.user) return '';
+  return `<div class="demo-banner">Running in demo mode — accounts and contracts stay on this device. Connect Firebase in <a href="#/app/settings">Settings</a> to go live.</div>`;
+}
+
+/* ===========================================================
+   VIEW: Landing
+   =========================================================== */
+function viewLanding() {
+  return `
+  ${navHtml('dark')}
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow on-dark hero-eyebrow">Contract review for teams · <span class="accent">not just lawyers</span></div>
+      <h1 class="display">See what your contracts<br>are <em>actually</em> saying.</h1>
+      <p class="hero-sub">Upload a PDF or paste the text. Contractpilot marks every risk, missing term, and unusual clause in plain English — in the time it takes to skim the first page.</p>
+      <div class="hero-cta">
+        <a href="#/signup" class="btn btn-vellum">Review a contract</a>
+        <a href="#/how" class="btn btn-ghost-dark">See how it works</a>
+      </div>
+      <div class="hero-meta">
+        <span>No credit card</span>
+        <span>3 contracts free</span>
+        <span>Reviewed in ~30 seconds</span>
+      </div>
+
+      <!-- Signature: the redline sample -->
+      <div class="redline-sample" role="figure" aria-label="Example contract redline">
+        <div class="redline-sample-body">
+          <div class="redline-sample-head">
+            <span class="section-tag">§ 8.2</span>
+            <span class="clause-name">Auto-renewal</span>
+            <span class="doc-label">Vendor MSA · p. 12</span>
+          </div>
+          <p class="redline-sample-para">
+            This Agreement shall <span class="hl">automatically renew</span> for successive
+            <span class="strike">twelve (12) month</span> terms unless either Party provides
+            written notice of non-renewal at least <span class="anchor">ninety (90) days</span>
+            prior to the then-current expiration date. In the event of renewal, all pricing
+            shall be subject to <span class="strike">annual adjustment at Vendor's sole discretion</span>.
+          </p>
+        </div>
+        <div class="redline-sample-findings">
+          <div class="findings-head">
+            <span class="label">Findings on this clause</span>
+            <span class="count">3</span>
+          </div>
+          <div class="finding high">
+            <div class="finding-head">
+              <span class="finding-cat">Auto-renewal</span>
+              <span class="finding-sev">High</span>
+            </div>
+            <div class="finding-explain">Locks you in for another year if you miss a 90-day notice window. Most teams don't have a system to catch this.</div>
+            <div class="finding-ref">Suggest: negotiate to 30-day notice</div>
+          </div>
+          <div class="finding medium">
+            <div class="finding-head">
+              <span class="finding-cat">Payment terms</span>
+              <span class="finding-sev">Medium</span>
+            </div>
+            <div class="finding-explain">Vendor sets pricing at renewal with no cap. You have no visibility until the invoice arrives.</div>
+            <div class="finding-ref">Suggest: cap increase at CPI + 3%</div>
+          </div>
+          <div class="finding low">
+            <div class="finding-head">
+              <span class="finding-cat">Notice</span>
+              <span class="finding-sev">Low</span>
+            </div>
+            <div class="finding-explain">Written notice requirement is unclear on delivery — email may not qualify.</div>
+            <div class="finding-ref">Suggest: define "written" to include email</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- § 01 How it works -->
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-head-body">
+          <div class="eyebrow">Three steps · roughly thirty seconds</div>
+          <h2>Upload once. Review anywhere. Sign with the whole picture.</h2>
+          <p class="lede">You don't need to change your review process. You just need someone who reads every clause without skipping — and that's what Contractpilot does.</p>
+        </div>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <h3>Upload the contract</h3>
+          <p>Drop a PDF, DOCX, or paste plain text. Vendor MSAs, SaaS terms, NDAs, employment agreements, leases — anything with clauses that matter.</p>
+        </div>
+        <div class="step">
+          <h3>Contractpilot reads every line</h3>
+          <p>The model scans for risks, missing terms, and language that reads unusual for the document type — comparing against how most agreements handle each provision.</p>
+        </div>
+        <div class="step">
+          <h3>You get a redlined view</h3>
+          <p>Each finding is categorised, ranked by severity, quoted from the contract, and explained in plain English with a specific suggestion for what to negotiate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- § 02 What it catches -->
+  <section class="section" id="catches">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-head-body">
+          <div class="eyebrow">Categories · with real examples</div>
+          <h2>The things that hurt you months after signature.</h2>
+          <p class="lede">Every category below is something Contractpilot actively looks for. Findings are ranked <span style="color:var(--redline)">high</span>, <span style="color:#9C7A2A">medium</span>, or <span style="color:var(--sage)">low</span> and cross-referenced to how similar contracts usually read.</p>
+        </div>
+      </div>
+
+      <div class="catches">
+        <div class="catch">
+          <h4>Auto-renewal traps</h4>
+          <p>Clauses that renew silently unless you cancel inside a tight window. Contractpilot flags the term length and the notice period side-by-side.</p>
+          <div class="catch-example">"…shall automatically renew for successive twelve (12) month terms unless notice is given at least ninety (90) days prior…"</div>
+        </div>
+        <div class="catch">
+          <h4>One-sided indemnity</h4>
+          <p>Indemnification obligations that only run one way, or that cover more than third-party claims. We surface both the scope and what you'd normally see instead.</p>
+          <div class="catch-example">"Client shall indemnify, defend and hold harmless Vendor from any and all claims…"</div>
+        </div>
+        <div class="catch">
+          <h4>Liability that isn't actually capped</h4>
+          <p>Liability clauses with carve-outs so broad the cap becomes meaningless — or missing entirely. We call out both the cap and the exclusions.</p>
+          <div class="catch-example">"…except for breach of confidentiality, gross negligence, IP infringement, or breach of Section 4…"</div>
+        </div>
+        <div class="catch">
+          <h4>Broad IP assignments</h4>
+          <p>Assignments that sweep in your background IP, tooling, or general know-how alongside the actual deliverables. We separate what's fair from what's aggressive.</p>
+          <div class="catch-example">"All work product, related materials, and any improvements thereto shall be the sole property of…"</div>
+        </div>
+        <div class="catch">
+          <h4>Missing standard clauses</h4>
+          <p>Sometimes the risk is what isn't there — no limitation of liability in an MSA, no data return in a SaaS agreement, no cure period before termination.</p>
+          <div class="catch-example">"No limitation of liability clause detected in this Master Services Agreement."</div>
+        </div>
+        <div class="catch">
+          <h4>Language that reads unusual</h4>
+          <p>Clauses that use non-standard wording for their type — often a sign the counterparty's lawyer inserted something specific and hoped you wouldn't notice.</p>
+          <div class="catch-example">"Vendor may modify these Terms at any time upon posting revised Terms on its website…"</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Editorial two-column: who it's for -->
+  <section class="section">
+    <div class="wrap">
+      <div class="two-col">
+        <div class="primary">
+          <div class="eyebrow">Built for teams that sign contracts weekly</div>
+          <h2>Legal review, without a legal department.</h2>
+          <p>The vast majority of business contracts never reach a lawyer. They get skimmed by a founder, a head of ops, a procurement lead — someone with ten minutes and no training in what to look for on page fourteen.</p>
+          <p>Contractpilot exists for that reader. It doesn't replace outside counsel on the deals that matter. It catches the clauses in the deals that shouldn't have needed a lawyer in the first place.</p>
+        </div>
+        <div class="secondary">
+          <dl>
+            <dt>Ops leaders</dt>
+            <dd>Vendor MSAs, SaaS subscriptions, service agreements — all the contracts finance forwards on a Friday afternoon.</dd>
+            <dt>Founders</dt>
+            <dd>Investor documents, employee agreements, customer contracts. First pass before you loop in your lawyer.</dd>
+            <dt>Procurement</dt>
+            <dd>Consistent risk flagging across every supplier agreement — before it hits legal's queue.</dd>
+            <dt>Small firms</dt>
+            <dd>Second-set-of-eyes on routine reviews so senior counsel focuses on the exceptions.</dd>
+            <dt>Recruiters &amp; HR</dt>
+            <dd>Employment agreements, contractor terms, offer letters — before candidates receive them.</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- § 03 Pricing -->
+  <section class="section" id="pricing">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-head-body">
+          <div class="eyebrow">Four plans · monthly · cancel anytime</div>
+          <h2>Priced per team, not per document.</h2>
+          <p class="lede">Start free with three contracts a month. Upgrade when you're routing every agreement through Contractpilot before it reaches the signer.</p>
+        </div>
+      </div>
+
+      <div class="plans">
+        <div class="plan">
+          <div class="plan-name">Solo</div>
+          <div class="plan-price"><span class="amt">Free</span></div>
+          <div class="plan-tagline">For occasional reviews.</div>
+          <a href="#/signup" class="btn btn-ghost plan-cta">Start reviewing</a>
+          <ul>
+            <li>3 contracts per month</li>
+            <li>PDF, DOCX, and text input</li>
+            <li>Full findings with plain-English explanations</li>
+            <li>Suggestions for what to negotiate</li>
+            <li>1 user</li>
+          </ul>
+        </div>
+        <div class="plan">
+          <div class="plan-name">Team</div>
+          <div class="plan-price"><span class="amt">$47</span><span class="cyc">/ month</span></div>
+          <div class="plan-tagline">For small ops teams.</div>
+          <a href="#/signup" class="btn btn-ghost plan-cta">Start 7-day trial</a>
+          <ul>
+            <li>Unlimited contracts</li>
+            <li>Up to 5 seats</li>
+            <li>Shared workspace and history</li>
+            <li>Comment and share findings</li>
+            <li>Email support</li>
+          </ul>
+        </div>
+        <div class="plan feature">
+          <div class="plan-name">Business · Most popular</div>
+          <div class="plan-price"><span class="amt">$57</span><span class="cyc">/ month</span></div>
+          <div class="plan-tagline">For procurement and mid-size operations.</div>
+          <a href="#/signup" class="btn btn-vellum plan-cta" style="background: var(--vellum-soft); color: var(--ink);">Start 7-day trial</a>
+          <ul>
+            <li>Everything in Team</li>
+            <li>Up to 15 seats</li>
+            <li>Export findings as PDF or CSV</li>
+            <li>Custom risk categories</li>
+            <li>Priority support</li>
+            <li>Slack notifications</li>
+          </ul>
+        </div>
+        <div class="plan">
+          <div class="plan-name">Firm</div>
+          <div class="plan-price"><span class="amt">$97</span><span class="cyc">/ month</span></div>
+          <div class="plan-tagline">For legal teams and firms.</div>
+          <a href="#/signup" class="btn btn-ghost plan-cta">Start 7-day trial</a>
+          <ul>
+            <li>Everything in Business</li>
+            <li>Unlimited seats</li>
+            <li>SSO (SAML)</li>
+            <li>Audit trail and API access</li>
+            <li>Custom contract policies</li>
+            <li>Dedicated onboarding</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section" id="faq">
+    <div class="wrap wrap-narrow">
+      <div class="eyebrow" style="margin-bottom: 12px;">Questions</div>
+      <h2 class="display" style="font-size: clamp(30px, 3.6vw, 42px); margin: 0 0 40px;">Things people ask before they upload.</h2>
+      <div class="faq">
+        ${faqItems().map((it, i) => `
+          <div class="faq-item">
+            <button class="faq-q" data-faq="${i}">
+              <span class="q-text">${it.q}</span>
+              <span class="q-toggle"></span>
+            </button>
+            <div class="faq-a">${it.a}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA band -->
+  <section class="cta-band">
+    <div class="wrap">
+      <div class="eyebrow on-dark" style="margin-bottom: 20px;">Ready when you are</div>
+      <h2 class="display">Upload your first contract.<br><em>See what you've been missing.</em></h2>
+      <p>Free plan includes three contracts a month, forever. No credit card required to start.</p>
+      <div class="hero-cta">
+        <a href="#/signup" class="btn btn-vellum">Review a contract</a>
+        <a href="#/pricing" class="btn btn-ghost-dark">See pricing</a>
+      </div>
+    </div>
+  </section>
+
+  ${footerHtml()}
+  `;
+}
+
+function faqItems() {
+  return [
+    { q: 'Does Contractpilot replace my lawyer?', a: 'No. It replaces the ten-minute skim your team does before every routine contract gets signed. For high-stakes agreements — M&A, complex commercial deals, litigation — you still want a human lawyer. Contractpilot exists for everything below that bar: vendor MSAs, SaaS terms, NDAs, service agreements, offer letters. The routine stuff that shouldn\'t need a lawyer but often creates the biggest surprises months later.' },
+    { q: 'How does it handle confidential contracts?', a: 'Contract text is sent to a large language model for analysis and stored in your workspace. You control who has access. On the Business and Firm plans, you can request a signed data processing agreement and configure retention policies. Nothing is used to train models. If your contracts are subject to specific confidentiality obligations, review the DPA before you upload — the same way you would for any SaaS tool.' },
+    { q: 'What file formats work?', a: 'PDF and DOCX for uploads; plain text for paste. Scanned PDFs work if the text layer is present — for pure image PDFs, run OCR first (Adobe Acrobat, Preview on Mac, or free tools like ocr.space). We\'re adding OCR directly in the app soon.' },
+    { q: 'What contract types does it review?', a: 'It works on any prose contract in English — MSAs, SOWs, NDAs, SaaS agreements, employment contracts, leases, vendor agreements, service agreements, licenses, terms of service. It does not do well on highly structured documents like leases with dense schedule tables, or contracts primarily written in other languages.' },
+    { q: 'How accurate is the analysis?', a: 'It surfaces most of what an attentive first-pass review would catch, and often more, because it doesn\'t get bored on page fourteen. It will occasionally miss something a specialist would catch, and it will occasionally flag something that isn\'t really an issue for your context. Treat every finding as a prompt to look — not a final judgment.' },
+    { q: 'Can I export the findings?', a: 'Yes. Business and Firm plans can export a review as a shareable PDF or CSV of findings, ready to attach to your negotiation notes or share with the counterparty\'s counsel.' },
+    { q: 'Is there a free trial for paid plans?', a: 'Yes — 7 days on Team, Business, and Firm, no credit card required. The Solo plan is free forever with a 3-contract-per-month limit.' },
+  ];
+}
+
+/* ===========================================================
+   VIEW: Auth (signin, signup, reset)
+   =========================================================== */
+function authLeftBlock(kind) {
+  const quotes = {
+    signin: { q: 'The auto-renewal clause in our supplier MSA would have cost us $84,000 if it had triggered. We found it in a Contractpilot review the week before.', who: 'Head of Operations · Regional logistics firm' },
+    signup: { q: 'I used to read every vendor contract front to back and still miss things. Now I read the findings first, then check the clauses that matter.', who: 'General Counsel · Series B SaaS' },
+    reset: { q: 'It\'s the second-set-of-eyes I always wished I had at 5pm on a Friday afternoon when procurement forwards a contract to sign.', who: 'Founder · Two-year-old agency' },
+  };
+  const qq = quotes[kind] || quotes.signin;
+  return `
+  <div class="auth-left">
+    <div class="auth-left-inner">
+      <a href="#/" class="nav-brand" style="color: var(--vellum-soft);">
+        ${brandMark(true)}
+        <span>Contractpilot</span>
+      </a>
+      <h2>See what your contracts<br>are <em>actually</em> saying.</h2>
+    </div>
+    <div class="auth-left-inner">
+      <p class="quote">"${qq.q}"</p>
+      <p class="quote-attr">${qq.who}</p>
+    </div>
+  </div>`;
+}
+
+function viewSignin() {
+  return `
+  <div class="auth-shell">
+    ${authLeftBlock('signin')}
+    <div class="auth-right">
+      <form class="auth-form" data-form="signin" novalidate>
+        <h1 class="display">Welcome back.</h1>
+        <p class="auth-sub">Sign in to keep reviewing contracts.</p>
+        <div class="form-error" data-error hidden></div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required>
+          <div class="hint" style="text-align:right;"><a href="#/reset" style="color: var(--ink); border-bottom: 1px solid var(--rule);">Forgot password?</a></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" data-submit>Sign in</button>
+        <p class="auth-alt">Don't have an account? <a href="#/signup">Create one</a></p>
+      </form>
+    </div>
+  </div>`;
+}
+
+function viewSignup() {
+  return `
+  <div class="auth-shell">
+    ${authLeftBlock('signup')}
+    <div class="auth-right">
+      <form class="auth-form" data-form="signup" novalidate>
+        <h1 class="display">Create your account.</h1>
+        <p class="auth-sub">Free — no credit card. Three contracts a month.</p>
+        <div class="form-error" data-error hidden></div>
+        <div class="field">
+          <label for="name">Your name</label>
+          <input type="text" id="name" name="name" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="email">Work email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="new-password" required minlength="8">
+          <div class="hint">At least 8 characters.</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" data-submit>Create account</button>
+        <p class="auth-alt">Already have an account? <a href="#/signin">Sign in</a></p>
+      </form>
+    </div>
+  </div>`;
+}
+
+function viewReset() {
+  return `
+  <div class="auth-shell">
+    ${authLeftBlock('reset')}
+    <div class="auth-right">
+      <form class="auth-form" data-form="reset" novalidate>
+        <h1 class="display">Reset your password.</h1>
+        <p class="auth-sub">Enter your email and we'll send instructions.</p>
+        <div class="form-error" data-error hidden></div>
+        <div class="form-success" data-success hidden></div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" data-submit>Send reset instructions</button>
+        <p class="auth-alt">Remembered it? <a href="#/signin">Sign in</a></p>
+      </form>
+    </div>
+  </div>`;
+}
+
+/* ===========================================================
+   VIEW: App shell (dashboard, new, review, settings)
+   =========================================================== */
+function sidebarHtml(active) {
+  const item = (route, label) => `
+    <a href="#${route}" class="${state.route?.raw === route ? 'active' : ''}">
+      <span>${label}</span>
+    </a>`;
+  const initial = (state.user?.displayName || state.user?.email || '?')[0].toUpperCase();
+  return `
+  <aside class="app-sidebar">
+    <a href="#/" class="brand" style="color: var(--vellum-soft);">
+      ${brandMark(true)}
+      <span>Contractpilot</span>
+    </a>
+    <nav>
+      ${item('/app', 'Dashboard')}
+      ${item('/app/new', 'New review')}
+      ${item('/app/settings', 'Settings')}
+    </nav>
+    <div class="side-footer">
+      <div class="user">
+        <div class="avatar">${initial}</div>
+        <div class="who">
+          <div class="name">${escapeHtml(state.user?.displayName || 'You')}</div>
+          <div class="email">${escapeHtml(state.user?.email || '')}</div>
+        </div>
+      </div>
+      <button class="signout" data-signout>Sign out ↗</button>
+    </div>
+  </aside>`;
+}
+
+function viewDashboard() {
+  const rows = state.contracts;
+  const totalFindings = rows.reduce((a, c) => a + (c.findings?.length || 0), 0);
+  const highCount = rows.reduce((a, c) => a + (c.findings?.filter(f => f.severity === 'high').length || 0), 0);
+  const catCount = new Set(rows.flatMap(c => (c.findings || []).map(f => f.category))).size;
+
+  return `
+  ${demoBanner()}
+  <div class="app-shell">
+    ${sidebarHtml('dashboard')}
+    <main class="app-main">
+      <div class="app-header">
+        <div>
+          <h1>Contracts reviewed</h1>
+          <div class="app-sub">Dashboard</div>
+        </div>
+        <a href="#/app/new" class="btn btn-primary">Review a new contract</a>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="label">Contracts</div><div class="val">${rows.length}</div></div>
+        <div class="stat"><div class="label">Total findings</div><div class="val">${totalFindings}</div></div>
+        <div class="stat"><div class="label">High severity</div><div class="val risk">${highCount}</div></div>
+        <div class="stat"><div class="label">Risk categories</div><div class="val">${catCount}</div></div>
+      </div>
+
+      ${rows.length === 0 ? `
+        <div class="empty">
+          <div class="empty-mark">§</div>
+          <h3>No contracts reviewed yet.</h3>
+          <p>Upload your first agreement — a vendor MSA, an offer letter, an NDA — and Contractpilot will flag the risks in about thirty seconds.</p>
+          <a href="#/app/new" class="btn btn-primary">Review a contract</a>
+        </div>
+      ` : `
+        <div class="contract-list">
+          <div class="cl-row header">
+            <div>Contract</div>
+            <div class="cl-col">Type</div>
+            <div class="cl-col">Findings</div>
+            <div class="cl-col">High</div>
+            <div class="cl-col">Reviewed</div>
+            <div></div>
+          </div>
+          ${rows.map(c => {
+            const fCount = c.findings?.length || 0;
+            const hCount = c.findings?.filter(f => f.severity === 'high').length || 0;
+            const date = new Date(c.createdAt);
+            const dateStr = isNaN(date.getTime()) ? 'Recently' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            return `
+              <div class="cl-row" data-open="${c.id}">
+                <div>
+                  <div class="cl-title">${escapeHtml(c.title || 'Untitled contract')}</div>
+                  <div class="cl-meta">${escapeHtml(c.counterparty || 'No counterparty identified')}</div>
+                </div>
+                <div class="cl-col"><span class="pill neutral">${escapeHtml(c.docType || 'Agreement')}</span></div>
+                <div class="cl-col"><span class="pill neutral">${fCount}</span></div>
+                <div class="cl-col">${hCount > 0 ? `<span class="pill high">${hCount} High</span>` : `<span class="pill low">None</span>`}</div>
+                <div class="cl-col" style="font-family: var(--mono); font-size: 12px; color: var(--ink-mute);">${dateStr}</div>
+                <div class="cl-arrow">→</div>
+              </div>`;
+          }).join('')}
+        </div>
+      `}
+    </main>
+  </div>`;
+}
+
+function viewNewReview() {
+  return `
+  ${demoBanner()}
+  <div class="app-shell">
+    ${sidebarHtml('newReview')}
+    <main class="app-main">
+      <div class="app-header">
+        <div>
+          <div class="breadcrumb"><a href="#/app">Dashboard</a><span class="sep">/</span>New review</div>
+          <h1 style="margin-top:8px;">Review a contract</h1>
+        </div>
+      </div>
+
+      <div class="upload-page">
+        <div id="upload-container">
+          <div class="upload-zone" data-dropzone>
+            <div class="drop-mark"></div>
+            <h3>Drop a PDF or DOCX here</h3>
+            <p>Or click to choose a file · Max 10 MB</p>
+            <input type="file" id="file-input" accept=".pdf,.docx,.txt" hidden>
+            <button type="button" class="btn btn-ghost" data-pickfile>Choose file</button>
+          </div>
+
+          <div class="upload-divider">Or paste the text</div>
+
+          <div class="paste-box">
+            <div class="field">
+              <label for="paste-text">Contract text</label>
+              <textarea id="paste-text" placeholder="Paste the full contract text here — any prose contract in English works. The more complete the text, the more accurate the findings."></textarea>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" data-analyze-paste>Analyze this contract</button>
+          </div>
+        </div>
+
+        <div id="analyzing-container" hidden>
+          <div class="analyzing">
+            <div class="spinner"></div>
+            <h3 data-analyze-title>Reading the contract…</h3>
+            <p data-analyze-msg>This usually takes about thirty seconds.</p>
+            <div class="stage" data-analyze-stage>Stage 1 of 3</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>`;
+}
+
+function viewReviewPage(r) {
+  const c = state.currentContract;
+  if (!c) {
+    return `
+    ${demoBanner()}
+    <div class="app-shell">
+      ${sidebarHtml('reviewPage')}
+      <main class="app-main">
+        <div class="app-header"><h1>Loading review…</h1></div>
+      </main>
+    </div>`;
+  }
+
+  const findings = c.findings || [];
+  const highlighted = buildHighlightedText(c.text || '', findings);
+  const highCount = findings.filter(f => f.severity === 'high').length;
+  const medCount = findings.filter(f => f.severity === 'medium').length;
+  const lowCount = findings.filter(f => f.severity === 'low').length;
+
+  return `
+  ${demoBanner()}
+  <div class="app-shell">
+    ${sidebarHtml('reviewPage')}
+    <main class="app-main">
+      <div class="review-header">
+        <div>
+          <div class="breadcrumb"><a href="#/app">Dashboard</a><span class="sep">/</span>${escapeHtml(c.title || 'Untitled')}</div>
+        </div>
+        <div style="display:flex; gap: 12px;">
+          <button class="btn btn-sm btn-ghost" data-export>Export PDF</button>
+          <button class="btn btn-sm btn-ghost" data-delete-contract style="border-color: var(--redline); color: var(--redline);">Delete review</button>
+        </div>
+      </div>
+
+      <div class="stat-row" style="margin-bottom: 24px;">
+        <div class="stat"><div class="label">Document type</div><div class="val" style="font-size: 20px;">${escapeHtml(c.docType || 'Agreement')}</div></div>
+        <div class="stat"><div class="label">Counterparty</div><div class="val" style="font-size: 18px;">${escapeHtml(c.counterparty || '—')}</div></div>
+        <div class="stat"><div class="label">Total findings</div><div class="val">${findings.length}</div></div>
+        <div class="stat"><div class="label">High severity</div><div class="val risk">${highCount}</div></div>
+      </div>
+
+      ${c.summary ? `<div style="background: var(--vellum-soft); border-left: 3px solid var(--ink); padding: 20px 24px; margin-bottom: 24px; font-family: var(--serif); font-size: 17px; line-height: 1.55; color: var(--ink);">${escapeHtml(c.summary)}</div>` : ''}
+
+      <div class="review-layout">
+        <div class="review-doc">
+          <h2>${escapeHtml(c.title || 'Untitled contract')}</h2>
+          <div class="doc-meta">${escapeHtml(c.docType || 'Agreement')} · ${(c.text || '').length.toLocaleString()} characters</div>
+          <div class="doc-text" data-doc-text>${highlighted}</div>
+        </div>
+        <aside class="review-findings">
+          <div class="rf-head">
+            <span class="label">Findings</span>
+            <span class="total">${findings.length}</span>
+          </div>
+          <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all">All · ${findings.length}</button>
+            <button class="filter-btn" data-filter="high">High · ${highCount}</button>
+            <button class="filter-btn" data-filter="medium">Medium · ${medCount}</button>
+            <button class="filter-btn" data-filter="low">Low · ${lowCount}</button>
+          </div>
+          <div data-findings-list>
+            ${findings.map(f => renderFinding(f)).join('')}
+          </div>
+          ${findings.length === 0 ? `<p style="color: var(--ink-mute); font-size: 14px; padding: 20px 0;">No findings — this contract reads clean.</p>` : ''}
+        </aside>
+      </div>
+    </main>
+  </div>`;
+}
+
+function renderFinding(f) {
+  return `
+  <div class="review-finding ${f.severity}" data-finding="${f.id}">
+    <div class="rf-title">
+      <span class="cat">${escapeHtml(f.category)}${f.sectionRef ? ' · ' + escapeHtml(f.sectionRef) : ''}</span>
+      <span class="sev">${escapeHtml(f.severity)}</span>
+    </div>
+    <div style="font-family: var(--serif); font-size: 16px; margin-bottom: 6px; line-height: 1.3; letter-spacing: -0.005em;">${escapeHtml(f.title)}</div>
+    ${f.quote ? `<div class="rf-quote">"${escapeHtml(f.quote.slice(0, 240))}${f.quote.length > 240 ? '…' : ''}"</div>` : ''}
+    <div class="rf-explain">${escapeHtml(f.explanation)}</div>
+    ${f.suggestion ? `<div class="rf-suggest"><span class="label">Suggest</span><span>${escapeHtml(f.suggestion)}</span></div>` : ''}
+  </div>`;
+}
+
+function viewSettings() {
+  const keyMasked = state.geminiKey ? state.geminiKey.slice(0, 4) + '••••••••' + state.geminiKey.slice(-4) : '';
+  return `
+  ${demoBanner()}
+  <div class="app-shell">
+    ${sidebarHtml('settings')}
+    <main class="app-main">
+      <div class="app-header">
+        <div>
+          <div class="breadcrumb"><a href="#/app">Dashboard</a><span class="sep">/</span>Settings</div>
+          <h1 style="margin-top:8px;">Settings</h1>
+        </div>
+      </div>
+
+      <div class="settings-page">
+        <div class="settings-block">
+          <h3>AI provider</h3>
+          <p class="block-sub">Contractpilot uses Google's Gemini 1.5 Flash for contract analysis. Add your API key to run real analyses. Without a key, uploads produce heuristic example findings so you can see how the product works.</p>
+          <div class="field">
+            <label for="gemini-key">Gemini API key</label>
+            <input type="password" id="gemini-key" placeholder="${keyMasked || 'AIza…'}" autocomplete="off">
+            <div class="hint">Get a key at <a href="https://ai.google.dev" target="_blank" rel="noopener" style="color: var(--ink); border-bottom: 1px solid var(--rule);">ai.google.dev</a> · Stored only in your browser.</div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button class="btn btn-primary" data-save-key>Save key</button>
+            ${state.geminiKey ? `<button class="btn btn-ghost" data-clear-key>Remove key</button>` : ''}
+          </div>
+          <div class="status-row">
+            <span class="lbl">Current status</span>
+            <span class="${state.geminiKey ? 'status-good' : 'status-bad'}">${state.geminiKey ? '● Connected' : '● Not connected — running on heuristics'}</span>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <h3>Firebase backend</h3>
+          <p class="block-sub">Connect a Firebase project to store accounts and contracts in the cloud instead of this browser. Paste your Firebase config as JSON.</p>
+          <div class="field">
+            <label for="fb-config">Firebase config (JSON)</label>
+            <textarea id="fb-config" style="min-height: 140px; font-family: var(--mono); font-size: 12.5px;" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+            <div class="hint">Find this in Firebase Console → Project Settings → Your apps.</div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <button class="btn btn-primary" data-save-fb>Save and reload</button>
+            ${FIREBASE_CONFIG ? `<button class="btn btn-ghost" data-clear-fb>Disconnect Firebase</button>` : ''}
+          </div>
+          <div class="status-row">
+            <span class="lbl">Current mode</span>
+            <span class="${state.mode === 'live' ? 'status-good' : 'status-bad'}">${state.mode === 'live' ? '● Live — Firebase connected' : '● Demo — using local storage'}</span>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <h3>Account</h3>
+          <div class="status-row"><span class="lbl">Name</span><span>${escapeHtml(state.user?.displayName || '—')}</span></div>
+          <div class="status-row"><span class="lbl">Email</span><span>${escapeHtml(state.user?.email || '—')}</span></div>
+          <div class="status-row"><span class="lbl">User ID</span><span style="font-family: var(--mono); font-size: 12px;">${escapeHtml(state.user?.uid || '—')}</span></div>
+        </div>
+      </div>
+    </main>
+  </div>`;
+}
+
+function viewLegal(r) {
+  const slug = r.match?.[1] || 'about';
+  const pages = {
+    about: {
+      title: 'About Contractpilot',
+      body: `<p>Contractpilot is an AI contract review platform for teams that sign more contracts than their legal department can read line-by-line — which is most teams.</p>
+<p>We built it because the same problem kept surfacing across founders, ops leaders, and small legal teams: the contracts that end up in court are rarely the ones anyone worried about at signing. They're the routine ones — the auto-renewals, the one-sided indemnities, the vendor terms nobody had time to fully read.</p>
+<p>Contractpilot reads every line of every contract you send through it. It flags the risks, quotes them back to you, and explains in plain English what each one means for your business. Then it tells you what to negotiate.</p>`
+    },
+    security: {
+      title: 'Security',
+      body: `<p>Contractpilot is designed with confidentiality in mind. Contracts are processed by a large language model for analysis and stored in your workspace under your account credentials.</p>
+<p>We do not use your contract text to train models. Access to your workspace is restricted to your users. On the Firm plan, we sign a Data Processing Agreement and offer configurable retention.</p>
+<p>Report a security concern: security@contractpilotai.digital</p>`
+    },
+    terms: {
+      title: 'Terms of use',
+      body: `<p>These terms govern your use of Contractpilot. By creating an account, you agree to use the service in accordance with these terms and applicable law.</p>
+<p>Contractpilot provides contract review assistance. It does not provide legal advice. Findings are informational and are not a substitute for advice from a qualified attorney. You remain solely responsible for decisions made based on the service's output.</p>
+<p>Full terms available on request: legal@contractpilotai.digital</p>`
+    },
+    privacy: {
+      title: 'Privacy',
+      body: `<p>Contractpilot collects the minimum data required to provide the service: your account details, the contract text you submit, and standard operational logs.</p>
+<p>Contract text is used only to produce your findings and to power the features you use. We do not sell data. We do not use your contract text to train models.</p>
+<p>Contact: privacy@contractpilotai.digital</p>`
+    },
+    dpa: {
+      title: 'Data processing addendum',
+      body: `<p>Team and Firm customers can request our standard Data Processing Addendum to accompany the main terms of service.</p>
+<p>Request the current version: dpa@contractpilotai.digital</p>`
+    },
+  };
+  const page = pages[slug] || pages.about;
+  return `
+  ${navHtml('light')}
+  <section class="section">
+    <div class="wrap wrap-narrow">
+      <div class="eyebrow" style="margin-bottom: 16px;">Legal</div>
+      <h1 class="display" style="font-size: clamp(36px, 4vw, 52px); margin: 0 0 40px; letter-spacing: -0.02em;">${escapeHtml(page.title)}</h1>
+      <div style="font-family: var(--serif); font-size: 17px; line-height: 1.65; color: var(--ink-soft); max-width: 60ch;">
+        ${page.body}
+      </div>
+    </div>
+  </section>
+  ${footerHtml()}
+  `;
+}
+
+/* ===========================================================
+   Bindings
+   =========================================================== */
+function bindGlobal() {
+  document.querySelectorAll('[data-navtoggle]').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.nav').classList.toggle('open'));
+  });
+  document.querySelectorAll('[data-signout]').forEach(btn => {
+    btn.addEventListener('click', () => signOut());
+  });
+}
+
+function bindLanding() {
+  document.querySelectorAll('[data-faq]').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.faq-item').classList.toggle('open'));
+  });
+}
+
+function bindAuth(kind) {
+  const form = document.querySelector('[data-form]');
+  if (!form) return;
+  const errBox = form.querySelector('[data-error]');
+  const okBox = form.querySelector('[data-success]');
+  const submitBtn = form.querySelector('[data-submit]');
+
+  const setErr = (msg) => {
+    if (okBox) { okBox.hidden = true; okBox.textContent = ''; }
+    if (msg) { errBox.hidden = false; errBox.textContent = msg; }
+    else { errBox.hidden = true; errBox.textContent = ''; }
+  };
+  const setOk = (msg) => {
+    setErr('');
+    if (okBox) { okBox.hidden = false; okBox.textContent = msg; }
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    setErr('');
+    const data = Object.fromEntries(new FormData(form));
+    const original = submitBtn.textContent;
+    submitBtn.disabled = true; submitBtn.textContent = 'Working…';
+    try {
+      if (kind === 'signin') {
+        await signIn(data.email.trim(), data.password);
+        navigate('/app');
+      } else if (kind === 'signup') {
+        if (!data.email.trim() || !data.password || data.password.length < 8) throw new Error('Please enter a valid email and a password of at least 8 characters.');
+        await signUp((data.name || '').trim(), data.email.trim(), data.password);
+        navigate('/app');
+      } else if (kind === 'reset') {
+        if (!data.email.trim()) throw new Error('Please enter your email.');
+        await resetPassword(data.email.trim());
+        setOk('If an account exists for that email, we\'ve sent reset instructions.');
+      }
+    } catch (err) {
+      setErr(cleanErr(err));
+    } finally {
+      submitBtn.disabled = false; submitBtn.textContent = original;
+    }
+  });
+}
+
+function cleanErr(err) {
+  const msg = err?.message || String(err);
+  if (msg.includes('auth/invalid-credential') || msg.includes('auth/wrong-password') || msg.includes('auth/user-not-found')) return 'That email and password don\'t match an account.';
+  if (msg.includes('auth/email-already-in-use')) return 'An account with that email already exists.';
+  if (msg.includes('auth/weak-password')) return 'Please choose a longer password (at least 8 characters).';
+  if (msg.includes('auth/invalid-email')) return 'That doesn\'t look like a valid email address.';
+  return msg.replace(/^Firebase:\s*/, '').replace(/\(auth\/[^)]+\)\.?/, '').trim();
+}
+
+function bindDashboard() {
+  document.querySelectorAll('[data-open]').forEach(row => {
+    row.addEventListener('click', async () => {
+      const id = row.getAttribute('data-open');
+      state.currentContract = await fetchContract(id);
+      navigate('/app/review/' + id);
+    });
+  });
+}
+
+function bindNewReview() {
+  const fileInput = document.getElementById('file-input');
+  const pickBtn = document.querySelector('[data-pickfile]');
+  const dropzone = document.querySelector('[data-dropzone]');
+  const analyzePasteBtn = document.querySelector('[data-analyze-paste]');
+  const pasteBox = document.getElementById('paste-text');
+  const uploadContainer = document.getElementById('upload-container');
+  const analyzingContainer = document.getElementById('analyzing-container');
+
+  const showAnalyzing = (title, msg, stage) => {
+    uploadContainer.hidden = true;
+    analyzingContainer.hidden = false;
+    document.querySelector('[data-analyze-title]').textContent = title;
+    document.querySelector('[data-analyze-msg]').textContent = msg;
+    document.querySelector('[data-analyze-stage]').textContent = stage;
+  };
+
+  pickBtn?.addEventListener('click', () => fileInput.click());
+  dropzone?.addEventListener('click', (e) => { if (e.target === dropzone || e.target.classList.contains('drop-mark')) fileInput.click(); });
+
+  ;['dragover','dragenter'].forEach(ev => dropzone?.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add('drag'); }));
+  ;['dragleave','drop'].forEach(ev => dropzone?.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+  dropzone?.addEventListener('drop', async (e) => {
+    const f = e.dataTransfer.files?.[0];
+    if (f) await handleFile(f);
+  });
+  fileInput?.addEventListener('change', async (e) => {
+    const f = e.target.files?.[0];
+    if (f) await handleFile(f);
+  });
+
+  analyzePasteBtn?.addEventListener('click', async () => {
+    const text = pasteBox.value.trim();
+    if (!text || text.length < 200) {
+      showToast('Please paste at least a couple of paragraphs of contract text.', 'error');
+      return;
+    }
+    await runAnalysis(text, 'Pasted contract', 'text/plain');
+  });
+
+  async function handleFile(file) {
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('File too large — maximum 10 MB.', 'error');
+      return;
+    }
+    try {
+      showAnalyzing('Reading the file…', 'Extracting text from ' + file.name, 'Stage 1 of 3');
+      let text = '';
+      if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+        text = await extractPdfText(file);
+      } else if (/\.txt$/i.test(file.name)) {
+        text = await file.text();
+      } else if (/\.docx$/i.test(file.name)) {
+        // Basic DOCX handling — extract text from document.xml
+        text = await extractDocxText(file);
+      } else {
+        text = await file.text();
+      }
+      if (!text || text.trim().length < 100) throw new Error('Could not extract enough text from that file. Try pasting the contract text instead.');
+      await runAnalysis(text, file.name, file.type);
+    } catch (e) {
+      uploadContainer.hidden = false;
+      analyzingContainer.hidden = true;
+      showToast(e.message || 'Failed to process that file.', 'error');
+    }
+  }
+
+  async function runAnalysis(text, name, mime) {
+    try {
+      showAnalyzing('Reading every line…', 'Contractpilot is scanning for risks, missing terms, and unusual language.', 'Stage 2 of 3');
+      const result = await analyzeContract(text);
+      showAnalyzing('Preparing your review…', 'Almost done.', 'Stage 3 of 3');
+      const record = await saveContract({
+        title: result.title,
+        docType: result.docType,
+        counterparty: result.counterparty,
+        summary: result.summary,
+        findings: result.findings,
+        text: text.slice(0, 100000),
+        source: name,
+        mime,
+      });
+      state.currentContract = record;
+      showToast('Review ready — ' + result.findings.length + ' finding' + (result.findings.length === 1 ? '' : 's'), 'success');
+      navigate('/app/review/' + record.id);
+    } catch (e) {
+      uploadContainer.hidden = false;
+      analyzingContainer.hidden = true;
+      showToast(e.message || 'Analysis failed.', 'error');
+    }
+  }
+}
+
+async function extractDocxText(file) {
+  // DOCX is a zip; naive fallback: try to read plain text if possible, else warn
+  try {
+    const buf = await file.arrayBuffer();
+    // Basic sniff for common DOCX text patterns
+    const bytes = new Uint8Array(buf);
+    // Look for XML text within the zip stream
+    const decoder = new TextDecoder('utf-8', { fatal: false });
+    const raw = decoder.decode(bytes);
+    // Extract text between <w:t> tags if present
+    const matches = raw.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+    if (matches && matches.length > 5) {
+      return matches.map(m => m.replace(/<[^>]+>/g, '')).join(' ').replace(/\s+/g, ' ').trim();
+    }
+    throw new Error('No text found');
+  } catch (e) {
+    throw new Error('DOCX support is limited — please save the file as PDF or paste the text.');
+  }
+}
+
+async function bindReviewPage(r) {
+  const id = r.match?.[1];
+  if (!state.currentContract || state.currentContract.id !== id) {
+    state.currentContract = await fetchContract(id);
+    render();
+    return;
+  }
+
+  // Filter buttons
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.getAttribute('data-filter');
+      const findings = state.currentContract.findings || [];
+      const filtered = f === 'all' ? findings : findings.filter(x => x.severity === f);
+      document.querySelector('[data-findings-list]').innerHTML = filtered.map(renderFinding).join('') || `<p style="color: var(--ink-mute); font-size: 14px; padding: 16px 0;">No ${f} findings.</p>`;
+      wireFindingClicks();
+    });
+  });
+
+  // Delete
+  document.querySelector('[data-delete-contract]')?.addEventListener('click', async () => {
+    if (!confirm('Delete this review? This cannot be undone.')) return;
+    await deleteContract(state.currentContract.id);
+    state.currentContract = null;
+    navigate('/app');
+  });
+
+  // Export (naive — print)
+  document.querySelector('[data-export]')?.addEventListener('click', () => {
+    window.print();
+  });
+
+  wireFindingClicks();
+
+  function wireFindingClicks() {
+    document.querySelectorAll('[data-finding]').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-finding');
+        document.querySelectorAll('[data-finding]').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.highlight').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        const span = document.querySelector('[data-finding-id="' + id + '"]');
+        if (span) {
+          span.classList.add('active');
+          span.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
+    document.querySelectorAll('.highlight').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-finding-id');
+        document.querySelectorAll('.highlight').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('[data-finding]').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        const card = document.querySelector('[data-finding="' + id + '"]');
+        if (card) {
+          card.classList.add('active');
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    });
+  }
+}
+
+function bindSettings() {
+  document.querySelector('[data-save-key]')?.addEventListener('click', () => {
+    const val = document.getElementById('gemini-key').value.trim();
+    if (!val) { showToast('Please enter your Gemini API key.', 'error'); return; }
+    state.geminiKey = val;
+    localStorage.setItem('cp_gemini_key', val);
+    showToast('API key saved.', 'success');
+    render();
+  });
+  document.querySelector('[data-clear-key]')?.addEventListener('click', () => {
+    state.geminiKey = '';
+    localStorage.removeItem('cp_gemini_key');
+    showToast('API key removed. Now running on heuristics.', 'success');
+    render();
+  });
+  document.querySelector('[data-save-fb]')?.addEventListener('click', () => {
+    const val = document.getElementById('fb-config').value.trim();
+    if (!val) { showToast('Please paste your Firebase config JSON.', 'error'); return; }
+    try {
+      const parsed = JSON.parse(val);
+      if (!parsed.apiKey || !parsed.projectId) throw new Error('Missing required Firebase config fields.');
+      localStorage.setItem('cp_fb_config', JSON.stringify(parsed));
+      showToast('Firebase config saved — reloading…', 'success');
+      setTimeout(() => location.reload(), 800);
+    } catch (e) {
+      showToast('Invalid JSON: ' + e.message, 'error');
+    }
+  });
+  document.querySelector('[data-clear-fb]')?.addEventListener('click', () => {
+    localStorage.removeItem('cp_fb_config');
+    showToast('Firebase disconnected — reloading…', 'success');
+    setTimeout(() => location.reload(), 800);
+  });
+}
+
+/* ===========================================================
+   Init
+   =========================================================== */
+(async function init() {
+  await initFirebase();
+  render();
+})();
+
+</script>
+</body>
+</html>
