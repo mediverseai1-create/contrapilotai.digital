@@ -1,14 +1,14 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { contractAnalysisSchema, type ContractAnalysisResult } from './schema';
 
 export class AIConfigError extends Error {
   constructor() {
-    super('GEMINI_API_KEY is not configured on the server.');
+    super('GROQ_API_KEY is not configured on the server.');
     this.name = 'AIConfigError';
   }
 }
 
-export const GEMINI_MODEL = 'gemini-2.0-flash';
+export const AI_MODEL = 'llama-3.3-70b-versatile';
 
 const SYSTEM_INSTRUCTION = `You are a contract review assistant for ContractPilot AI, a B2B tool that helps
 business teams (not lawyers) understand risk in commercial contracts before signing.
@@ -27,21 +27,14 @@ text actually says. Rules:
   no commentary outside the JSON.`;
 
 export async function analyzeContractText(text: string): Promise<ContractAnalysisResult> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new AIConfigError();
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    systemInstruction: SYSTEM_INSTRUCTION,
-    generationConfig: {
-      responseMimeType: 'application/json',
-    },
-  });
+  const client = new OpenAI({ apiKey, baseURL: 'https://api.groq.com/openai/v1' });
 
-  const prompt = `Analyze this contract and return JSON with exactly this shape:
+  const userPrompt = `Analyze this contract and return JSON with exactly this shape:
 {
   "doc_type": string,               // e.g. "Vendor MSA", "NDA", "Employment agreement"
   "counterparty": string | null,    // the other party's name if identifiable
@@ -71,8 +64,16 @@ Contract text:
 ${text.slice(0, 100_000)}
 """`;
 
-  const result = await model.generateContent(prompt);
-  const raw = result.response.text();
+  const completion = await client.chat.completions.create({
+    model: AI_MODEL,
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: SYSTEM_INSTRUCTION },
+      { role: 'user', content: userPrompt },
+    ],
+  });
+
+  const raw = completion.choices[0]?.message?.content ?? '';
 
   let parsed: unknown;
   try {

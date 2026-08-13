@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { analyzeContractText, AIConfigError, GEMINI_MODEL } from '@/lib/ai/gemini';
+import { analyzeContractText, AIConfigError, AI_MODEL } from '@/lib/ai/groq';
 
 /**
  * Runs AI analysis against already-extracted contract text and persists the
@@ -37,7 +37,7 @@ export async function processContractAnalysis(
         organization_id: organizationId,
         summary: analysis.summary,
         overall_risk: analysis.overall_risk,
-        model: GEMINI_MODEL,
+        model: AI_MODEL,
         raw_response: analysis,
       })
       .select()
@@ -100,7 +100,7 @@ export async function processContractAnalysis(
   } catch (err) {
     const message =
       err instanceof AIConfigError
-        ? 'AI analysis is not configured yet. An administrator needs to add a GEMINI_API_KEY.'
+        ? 'AI analysis is not configured yet. An administrator needs to add a GROQ_API_KEY.'
         : err instanceof Error
           ? err.message
           : 'Analysis failed unexpectedly.';
