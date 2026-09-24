@@ -5,25 +5,27 @@ export function Hero() {
     <section className="hero">
       <div className="hero-inner">
         <div className="eyebrow on-dark hero-eyebrow">
-          Contract review for teams · <span className="accent">not just lawyers</span>
+          AI contract intelligence · <span className="accent">for companies without a legal department</span>
         </div>
         <h1 className="display">
-          See what your contracts
+          Your company is signing contracts
           <br />
-          are <em>actually</em> saying.
+          that could take <em>months</em> to unwind.
         </h1>
         <p className="hero-sub">
-          Upload a PDF or paste the text. ContractPilot AI marks every risk, missing term, and
-          unusual clause in plain English — in the time it takes to skim the first page.
+          When you lack in-house legal, every contract is an organizational blind spot — auto-renew
+          traps that lock the business in for another year, liability clauses that exceed your
+          insurance, payment terms that hand vendors pricing power. ContractPilot AI reads every
+          clause, flags what&apos;s actually at stake, and puts it in front of you before signature.
         </p>
         <div className="hero-cta">
-          <Link href="/signup" className="btn btn-vellum">Review a contract</Link>
+          <Link href="/signup" className="btn btn-vellum">Try it on a contract</Link>
           <Link href="/#how" className="btn btn-ghost-dark">See how it works</Link>
         </div>
         <div className="hero-meta">
           <span>No credit card</span>
-          <span>3 contracts free</span>
-          <span>AI findings to support your review</span>
+          <span>Free for your team&apos;s first 3 contracts</span>
+          <span>Reviewed against common contract patterns</span>
         </div>
 
         <div className="redline-sample" role="figure" aria-label="Example contract redline">

@@ -4,7 +4,7 @@ export function TwoCol() {
       <div className="wrap">
         <div className="two-col">
           <div className="primary">
-            <div className="eyebrow">Built for teams that sign contracts weekly</div>
+            <div className="eyebrow">For organizations signing contracts without legal infrastructure</div>
             <h2>Legal review, without a legal department.</h2>
             <p>
               The vast majority of business contracts never reach a lawyer. They get skimmed by a
@@ -20,17 +20,17 @@ export function TwoCol() {
           </div>
           <div className="secondary">
             <dl>
-              <dt>Ops leaders</dt>
+              <dt>Operations leaders</dt>
               <dd>
-                Vendor MSAs, SaaS subscriptions, service agreements — all the contracts finance
-                forwards on a Friday afternoon.
+                Manage vendor relationships and bear the cost when a renewal or a bad term gets
+                missed.
               </dd>
-              <dt>Founders</dt>
-              <dd>Investor documents, employee agreements, customer contracts. First pass before you loop in your lawyer.</dd>
+              <dt>Founders &amp; executives</dt>
+              <dd>Need visibility into what the business has actually committed to — before it becomes a surprise.</dd>
               <dt>Procurement</dt>
               <dd>Consistent risk flagging across every supplier agreement — before it hits legal&apos;s queue.</dd>
-              <dt>Small firms</dt>
-              <dd>Second-set-of-eyes on routine reviews so senior counsel focuses on the exceptions.</dd>
+              <dt>Growing companies</dt>
+              <dd>Can&apos;t support in-house counsel yet, but still need the protection one provides.</dd>
               <dt>Recruiters &amp; HR</dt>
               <dd>Employment agreements, contractor terms, offer letters — before candidates receive them.</dd>
             </dl>

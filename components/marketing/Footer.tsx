@@ -12,7 +12,8 @@ export function Footer() {
               <span>ContractPilot</span>
             </Link>
             <p className="tagline">
-              AI contract review for teams that would rather read every line than skim the last page.
+              Contract intelligence that gives your business the legal protection an organization
+              can&apos;t get on its own.
             </p>
           </div>
           <div className="footer-col">

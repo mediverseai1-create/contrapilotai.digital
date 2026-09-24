@@ -31,6 +31,14 @@ const FAQ_ITEMS = [
     q: 'Is there a free trial for paid plans?',
     a: 'Yes — 7 days on Team, Business, and Firm, no credit card required. The Solo plan is free forever with a 3-contract-per-month limit.',
   },
+  {
+    q: 'Can we set our own risk standards?',
+    a: "Not yet. Today, every review is measured against how similar agreements typically read. Custom playbooks — your own acceptable terms — are on the roadmap.",
+  },
+  {
+    q: 'What does it connect to?',
+    a: 'Nothing yet — you paste text or upload a PDF/DOCX directly. Email, Drive, and e-signature connections aren’t built.',
+  },
 ];
 
 export function FAQ() {
