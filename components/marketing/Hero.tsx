@@ -4,9 +4,6 @@ export function Hero() {
   return (
     <section className="hero">
       <div className="hero-inner">
-        <div className="eyebrow on-dark hero-eyebrow">
-          AI contract intelligence · <span className="accent">for companies without a legal department</span>
-        </div>
         <h1 className="display">
           AI legal intelligence
           <br />
