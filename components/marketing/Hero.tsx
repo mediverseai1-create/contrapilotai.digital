@@ -8,9 +8,9 @@ export function Hero() {
           AI contract intelligence · <span className="accent">for companies without a legal department</span>
         </div>
         <h1 className="display">
-          Your company is signing contracts
+          AI legal intelligence
           <br />
-          that could take <em>months</em> to unwind.
+          for companies <em>and</em> businesses.
         </h1>
         <p className="hero-sub">
           When you lack in-house legal, every contract is an organizational blind spot — auto-renew
